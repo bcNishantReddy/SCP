@@ -8,46 +8,46 @@ const Profile = () => {
       <Navbar />
       <main className="pt-16">
         {/* Cover Image */}
-        <div className="h-64 bg-sage-200" />
+        <div className="h-32 md:h-64 bg-sage-200 transition-all duration-300" />
 
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             {/* Profile Header */}
-            <div className="relative -mt-20 mb-8">
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-32 w-32 rounded-full bg-sage-300 border-4 border-white" />
-                    <div>
-                      <h1 className="text-2xl font-bold text-sage-800">John Doe</h1>
+            <div className="relative -mt-16 mb-8">
+              <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
+                  <div className="flex flex-col md:flex-row items-center md:space-x-4">
+                    <div className="h-24 w-24 md:h-32 md:w-32 rounded-full bg-sage-300 border-4 border-white shrink-0" />
+                    <div className="text-center md:text-left mt-4 md:mt-0">
+                      <h1 className="text-xl md:text-2xl font-bold text-sage-800">John Doe</h1>
                       <p className="text-sage-600">Student at University</p>
                     </div>
                   </div>
-                  <Button className="bg-sage-600 hover:bg-sage-700">
+                  <Button className="bg-sage-600 hover:bg-sage-700 w-full md:w-auto">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap gap-4 text-sm text-sage-600">
+                <div className="flex flex-wrap gap-3 text-sm text-sage-600 mt-4">
                   <div className="flex items-center">
                     <Mail className="h-4 w-4 mr-2" />
-                    john.doe@example.com
+                    <span className="break-all">john.doe@example.com</span>
                   </div>
                   <div className="flex items-center">
                     <MapPin className="h-4 w-4 mr-2" />
-                    San Francisco, CA
+                    <span>San Francisco, CA</span>
                   </div>
                   <div className="flex items-center">
                     <Link2 className="h-4 w-4 mr-2" />
-                    portfolio.com/johndoe
+                    <span className="break-all">portfolio.com/johndoe</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* About */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
               <h2 className="text-lg font-semibold mb-4">About</h2>
               <p className="text-sage-600">
                 A passionate student interested in technology and innovation. Looking
@@ -56,12 +56,12 @@ const Profile = () => {
             </div>
 
             {/* Experience */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
               <h2 className="text-lg font-semibold mb-4">Experience</h2>
               <div className="space-y-6">
                 {[1, 2].map((exp) => (
-                  <div key={exp} className="flex space-x-4">
-                    <div className="flex-shrink-0">
+                  <div key={exp} className="flex flex-col md:flex-row md:space-x-4">
+                    <div className="flex-shrink-0 mb-4 md:mb-0">
                       <div className="h-12 w-12 rounded bg-sage-100 flex items-center justify-center">
                         <Building2 className="h-6 w-6 text-sage-600" />
                       </div>
@@ -80,12 +80,12 @@ const Profile = () => {
             </div>
 
             {/* Education */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
               <h2 className="text-lg font-semibold mb-4">Education</h2>
               <div className="space-y-6">
                 {[1].map((edu) => (
-                  <div key={edu} className="flex space-x-4">
-                    <div className="flex-shrink-0">
+                  <div key={edu} className="flex flex-col md:flex-row md:space-x-4">
+                    <div className="flex-shrink-0 mb-4 md:mb-0">
                       <div className="h-12 w-12 rounded bg-sage-100 flex items-center justify-center">
                         <Building2 className="h-6 w-6 text-sage-600" />
                       </div>
