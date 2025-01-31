@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { FileUpload, Plus } from "lucide-react"
+import { Upload, Plus } from "lucide-react"
 
 export function UploadPortfolioModal() {
   return (
@@ -37,7 +37,7 @@ export function UploadPortfolioModal() {
           <div className="grid gap-2">
             <Label>Portfolio File (PDF)</Label>
             <div className="border-2 border-dashed border-sage-200 rounded-lg p-4 text-center">
-              <FileUpload className="h-8 w-8 mx-auto mb-2 text-sage-500" />
+              <Upload className="h-8 w-8 mx-auto mb-2 text-sage-500" />
               <p className="text-sm text-sage-600">
                 Drag & drop or click to upload PDF
               </p>
