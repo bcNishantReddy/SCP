@@ -1,7 +1,8 @@
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Users, MessageSquare } from "lucide-react";
+import { Search, Users, MessageSquare } from "lucide-react";
+import { CreateGroupModal } from "@/components/modals/CreateGroupModal";
 
 const Groups = () => {
   return (
@@ -11,10 +12,7 @@ const Groups = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-sage-800">Groups</h1>
-            <Button className="bg-sage-600 hover:bg-sage-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Group
-            </Button>
+            <CreateGroupModal />
           </div>
 
           <div className="relative mb-6">
