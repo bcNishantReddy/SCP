@@ -78,12 +78,12 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
   const memberCount = approvedMembers + 1; // +1 for the owner
 
   // Truncate title and description
-  const truncatedTitle = project.title.length > 50 
-    ? project.title.substring(0, 50) + '...'
+  const truncatedTitle = project.title.length > 30 
+    ? project.title.substring(0, 30) + '...'
     : project.title;
 
-  const truncatedDescription = project.description.length > 100
-    ? project.description.substring(0, 100) + '...'
+  const truncatedDescription = project.description.length > 50
+    ? project.description.substring(0, 50) + '...'
     : project.description;
 
   return (
