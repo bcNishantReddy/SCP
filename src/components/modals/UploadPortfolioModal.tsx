@@ -12,11 +12,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-export function UploadPortfolioModal() {
+interface UploadPortfolioModalProps {
+  onSuccess?: () => void;
+}
+
+export function UploadPortfolioModal({ onSuccess }: UploadPortfolioModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -30,11 +34,11 @@ export function UploadPortfolioModal() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!file || !title || !description) {
+  const handleUpload = async () => {
+    if (!title || !description || !file) {
       toast({
         title: "Missing fields",
-        description: "Please fill in all fields and upload a PDF file",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -43,8 +47,9 @@ export function UploadPortfolioModal() {
     setIsUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user) throw new Error("No user found");
 
+      // Upload file
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const { error: uploadError, data } = await supabase.storage
@@ -53,7 +58,8 @@ export function UploadPortfolioModal() {
 
       if (uploadError) throw uploadError;
 
-      const { error: dbError } = await supabase
+      // Create portfolio entry
+      const { error: insertError } = await supabase
         .from('portfolios')
         .insert({
           title,
@@ -62,7 +68,7 @@ export function UploadPortfolioModal() {
           user_id: user.id,
         });
 
-      if (dbError) throw dbError;
+      if (insertError) throw insertError;
 
       toast({
         title: "Success",
@@ -72,6 +78,7 @@ export function UploadPortfolioModal() {
       setTitle("");
       setDescription("");
       setFile(null);
+      onSuccess?.();
     } catch (error) {
       console.error("Upload error:", error);
       toast({
@@ -96,7 +103,7 @@ export function UploadPortfolioModal() {
         <DialogHeader>
           <DialogTitle>Upload Portfolio</DialogTitle>
           <DialogDescription>
-            Share your work and achievements with the community.
+            Upload your portfolio in PDF format.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -104,13 +111,12 @@ export function UploadPortfolioModal() {
             <Label htmlFor="portfolio-title">Portfolio Title</Label>
             <Input 
               id="portfolio-title" 
-              placeholder="Enter portfolio title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
-            <Label>Portfolio File (PDF)</Label>
+            <Label>Upload Portfolio (PDF)</Label>
             <Input
               type="file"
               accept=".pdf"
@@ -127,7 +133,6 @@ export function UploadPortfolioModal() {
             <Label htmlFor="portfolio-description">Description</Label>
             <Textarea
               id="portfolio-description"
-              placeholder="Describe your portfolio..."
               className="min-h-[100px]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -140,7 +145,7 @@ export function UploadPortfolioModal() {
           </Button>
           <Button 
             className="bg-sage-600 hover:bg-sage-700"
-            onClick={handleSubmit}
+            onClick={handleUpload}
             disabled={isUploading}
           >
             {isUploading ? "Uploading..." : "Upload Portfolio"}
