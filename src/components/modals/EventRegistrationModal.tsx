@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,22 +7,62 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { useToast } from "@/hooks/use-toast"
-import { Check } from "lucide-react"
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Check } from "lucide-react";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function EventRegistrationModal() {
-  const { toast } = useToast()
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const { id: eventId } = useParams();
+  const queryClient = useQueryClient();
 
-  const handleRegister = () => {
-    toast({
-      title: "Registration Successful!",
-      description: "You have successfully registered for this event.",
-    })
-  }
+  const handleRegister = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to register for events.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("event_registrations")
+        .insert({
+          event_id: eventId,
+          user_id: user.id,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Registration Successful!",
+        description: "You have successfully registered for this event.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error registering for event:", error);
+      toast({
+        title: "Registration Failed",
+        description: "There was an error registering for the event. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="w-full bg-sage-600 hover:bg-sage-700">
           Register Now
@@ -41,8 +81,10 @@ export function EventRegistrationModal() {
           </p>
         </div>
         <DialogFooter>
-          <Button variant="outline">Cancel</Button>
-          <Button 
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
+          <Button
             className="bg-sage-600 hover:bg-sage-700"
             onClick={handleRegister}
           >
@@ -52,5 +94,5 @@ export function EventRegistrationModal() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
