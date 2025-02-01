@@ -34,6 +34,20 @@ export function UploadPortfolioModal({ onSuccess }: UploadPortfolioModalProps) {
     }
   };
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value.length <= 50) {
+      setTitle(value);
+    }
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    if (value.length <= 200) {
+      setDescription(value);
+    }
+  };
+
   const handleUpload = async () => {
     if (!title || !description || !file) {
       toast({
@@ -108,12 +122,18 @@ export function UploadPortfolioModal({ onSuccess }: UploadPortfolioModalProps) {
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="portfolio-title">Portfolio Title</Label>
+            <Label htmlFor="portfolio-title">
+              Portfolio Title (max 50 characters)
+            </Label>
             <Input 
               id="portfolio-title" 
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={handleTitleChange}
+              maxLength={50}
             />
+            <p className="text-sm text-sage-600">
+              {title.length}/50 characters
+            </p>
           </div>
           <div className="grid gap-2">
             <Label>Upload Portfolio (PDF)</Label>
@@ -130,13 +150,19 @@ export function UploadPortfolioModal({ onSuccess }: UploadPortfolioModalProps) {
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="portfolio-description">Description</Label>
+            <Label htmlFor="portfolio-description">
+              Description (max 200 characters)
+            </Label>
             <Textarea
               id="portfolio-description"
               className="min-h-[100px]"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={handleDescriptionChange}
+              maxLength={200}
             />
+            <p className="text-sm text-sage-600">
+              {description.length}/200 characters
+            </p>
           </div>
         </div>
         <DialogFooter>

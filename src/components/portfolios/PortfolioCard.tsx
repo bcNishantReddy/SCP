@@ -45,6 +45,7 @@ interface PortfolioCardProps {
 
 export const PortfolioCard = ({ portfolio, currentUserId, onDelete }: PortfolioCardProps) => {
   const { toast } = useToast();
+  const isOwner = currentUserId === portfolio.user_id;
 
   const handlePreview = async () => {
     try {
@@ -136,64 +137,62 @@ export const PortfolioCard = ({ portfolio, currentUserId, onDelete }: PortfolioC
               {format(new Date(portfolio.created_at), 'PPP')}
             </p>
           </div>
+          {isOwner && (
+            <div className="ml-auto flex space-x-2">
+              <EditPortfolioModal 
+                portfolio={portfolio} 
+                onUpdate={onDelete}
+              />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Portfolio</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this portfolio? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-red-600 hover:bg-red-700"
+                      onClick={handleDelete}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </div>
-        <CardTitle className="text-xl">{portfolio.title}</CardTitle>
+        <CardTitle className="text-xl truncate">{portfolio.title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <CardDescription className="text-sm">
+        <CardDescription className="text-sm line-clamp-3">
           {portfolio.description}
         </CardDescription>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline"
-            onClick={handlePreview}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleDownload}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
-        </div>
-        {currentUserId === portfolio.user_id && (
-          <div className="flex space-x-2">
-            <EditPortfolioModal 
-              portfolio={portfolio} 
-              onUpdate={onDelete}
-            />
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="text-red-600 hover:text-red-700">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Portfolio</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete this portfolio? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-red-600 hover:bg-red-700"
-                    onClick={handleDelete}
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
+      <CardFooter className="flex justify-end space-x-2">
+        <Button 
+          variant="outline"
+          onClick={handlePreview}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          Preview
+        </Button>
+        <Button 
+          variant="outline"
+          onClick={handleDownload}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Download
+        </Button>
       </CardFooter>
     </Card>
   );
