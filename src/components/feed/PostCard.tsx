@@ -31,55 +31,55 @@ export function PostCard({ post }: PostCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const toggleLike = useMutation<number, Error, ToggleLikeParams, unknown>({
-    mutationFn: async ({ postId, hasLiked }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+  const toggleLike = useMutation<number, Error, ToggleLikeParams>({
+  mutationFn: async ({ postId, hasLiked }) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
 
-      setIsLiking(true);
+    setIsLiking(true);
 
-      if (hasLiked) {
-        await supabase
-          .from('post_likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('user_id', user.id);
-      } else {
-        const { data: existingLike } = await supabase
-          .from('post_likes')
-          .select()
-          .eq('post_id', postId)
-          .eq('user_id', user.id)
-          .single();
-
-        if (!existingLike) {
-          await supabase
-            .from('post_likes')
-            .insert([{ post_id: postId, user_id: user.id }]);
-        }
-      }
-
-      const { data, error } = await supabase
-        .rpc(hasLiked ? 'decrement_likes' : 'increment_likes', { post_id: postId })
+    if (hasLiked) {
+      await supabase
+        .from('post_likes')
+        .delete()
+        .eq('post_id', postId as string) // Ensure it's string
+        .eq('user_id', user.id);
+    } else {
+      const { data: existingLike } = await supabase
+        .from('post_likes')
+        .select()
+        .eq('post_id', postId as string) // Ensure it's string
+        .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-    onSettled: () => {
-      setIsLiking(false);
-    },
-  });
+      if (!existingLike) {
+        await supabase
+          .from('post_likes')
+          .insert([{ post_id: postId, user_id: user.id }]);
+      }
+    }
+
+    const { data, error } = await supabase
+      .rpc<number>(hasLiked ? 'decrement_likes' : 'increment_likes', { post_id: postId })
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['posts'] });
+  },
+  onError: (error: Error) => {
+    toast({
+      title: "Error",
+      description: error.message,
+      variant: "destructive",
+    });
+  },
+  onSettled: () => {
+    setIsLiking(false);
+  },
+});
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 space-y-4">
