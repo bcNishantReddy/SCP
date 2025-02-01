@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Heart, Share2, Image, Link, Send } from "lucide-react";
+import { Heart, Image, Link, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,65 +15,90 @@ interface Post {
   created_at: string;
   image_url: string | null;
   likes_count: number;
-  comments: Comment[];
   profile: {
     name: string;
     avatar_url: string | null;
   };
+  has_liked?: boolean;
 }
 
-interface Comment {
-  id: string;
-  content: string;
-  user_id: string;
-  post_id: string;
-  created_at: string;
-  profile: {
-    name: string;
-    avatar_url: string | null;
-  };
-}
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
 const LiveFeed = () => {
   const [newPost, setNewPost] = useState("");
-  const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch posts with profiles and comments
+  // Fetch posts with profiles and check if current user has liked each post
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profile:profiles(name, avatar_url),
-          comments:comments(
-            id,
-            content,
-            user_id,
-            post_id,
-            created_at,
-            profile:profiles(name, avatar_url)
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Post[];
-    },
-  });
-
-  const createPost = useMutation({
-    mutationFn: async (content: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
         .from('posts')
-        .insert([{ content, user_id: user.id }])
+        .select(`
+          *,
+          profile:profiles(name, avatar_url)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch likes for current user
+      const { data: likes } = await supabase
+        .from('post_likes')
+        .select('post_id')
+        .eq('user_id', user.id);
+
+      const likedPostIds = new Set(likes?.map(like => like.post_id));
+
+      return data.map((post: Post) => ({
+        ...post,
+        has_liked: likedPostIds.has(post.id)
+      }));
+    },
+  });
+
+  const createPost = useMutation({
+    mutationFn: async ({ content, imageFile, link }: { content: string; imageFile: File | null; link: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      let image_url = null;
+
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('files')
+          .upload(filePath, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('files')
+          .getPublicUrl(filePath);
+
+        image_url = publicUrl;
+      }
+
+      const finalContent = link ? `${content}\n${link}` : content;
+
+      const { data, error } = await supabase
+        .from('posts')
+        .insert([{ 
+          content: finalContent, 
+          user_id: user.id,
+          image_url
+        }])
         .select()
         .single();
 
@@ -83,6 +108,10 @@ const LiveFeed = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       setNewPost("");
+      setSelectedImage(null);
+      setPreviewUrl(null);
+      setLinkUrl("");
+      setIsAddingLink(false);
       toast({
         title: "Success",
         description: "Post created successfully",
@@ -97,51 +126,33 @@ const LiveFeed = () => {
     },
   });
 
-  // Create comment mutation
-  const createComment = useMutation({
-    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+  const toggleLike = useMutation({
+    mutationFn: async ({ postId, hasLiked }: { postId: string; hasLiked: boolean }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
-        .from('comments')
-        .insert([{ 
-          post_id: postId,
-          content,
-          user_id: user.id
-        }])
-        .select()
-        .single();
+      if (hasLiked) {
+        // Unlike
+        await supabase
+          .from('post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+      } else {
+        // Like
+        await supabase
+          .from('post_likes')
+          .insert([{ post_id: postId, user_id: user.id }]);
+      }
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      setNewComment({});
-      toast({
-        title: "Success",
-        description: "Comment added successfully",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Like post mutation
-  const likePost = useMutation({
-    mutationFn: async (postId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
+      // Update likes count
       const { data, error } = await supabase
         .from('posts')
-        .update({ likes_count: posts?.find(p => p.id === postId)?.likes_count + 1 })
+        .update({ 
+          likes_count: hasLiked 
+            ? supabase.raw('likes_count - 1') 
+            : supabase.raw('likes_count + 1') 
+        })
         .eq('id', postId)
         .select()
         .single();
@@ -161,15 +172,41 @@ const LiveFeed = () => {
     },
   });
 
-  const handleCreatePost = async () => {
-    if (!newPost.trim()) return;
-    createPost.mutate(newPost);
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "Error",
+        description: "Image size must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedImage(file);
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
   };
 
-  const handleCreateComment = async (postId: string) => {
-    if (!newComment[postId]?.trim()) return;
-    createComment.mutate({ postId, content: newComment[postId] });
+  const handleCreatePost = async () => {
+    if (!newPost.trim() && !selectedImage && !linkUrl) return;
+    createPost.mutate({ 
+      content: newPost, 
+      imageFile: selectedImage,
+      link: linkUrl
+    });
   };
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <div className="min-h-screen bg-sage-50">
@@ -184,13 +221,55 @@ const LiveFeed = () => {
               onChange={(e) => setNewPost(e.target.value)}
               className="w-full min-h-[100px]"
             />
+            {previewUrl && (
+              <div className="relative">
+                <img 
+                  src={previewUrl} 
+                  alt="Preview" 
+                  className="max-h-64 rounded-lg"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={() => {
+                    setSelectedImage(null);
+                    setPreviewUrl(null);
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+            {isAddingLink && (
+              <Input
+                placeholder="Enter URL"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+              />
+            )}
             <div className="flex items-center justify-between">
               <div className="flex space-x-2">
-                <Button variant="ghost" size="sm">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleImageSelect}
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <Image className="h-4 w-4 mr-2" />
                   Image
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setIsAddingLink(!isAddingLink)}
+                >
                   <Link className="h-4 w-4 mr-2" />
                   Link
                 </Button>
@@ -242,7 +321,7 @@ const LiveFeed = () => {
                     </p>
                   </div>
                 </div>
-                <p className="text-gray-700">{post.content}</p>
+                <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
                 {post.image_url && (
                   <img 
                     src={post.image_url} 
@@ -254,60 +333,15 @@ const LiveFeed = () => {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => likePost.mutate(post.id)}
+                    onClick={() => toggleLike.mutate({ 
+                      postId: post.id, 
+                      hasLiked: post.has_liked || false 
+                    })}
+                    className={post.has_liked ? "text-red-500" : ""}
                   >
-                    <Heart className="h-4 w-4 mr-2" />
+                    <Heart className={`h-4 w-4 mr-2 ${post.has_liked ? "fill-current" : ""}`} />
                     {post.likes_count || 0} Likes
                   </Button>
-                  <Button variant="ghost" size="sm">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Comment
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                </div>
-
-                {/* Comments Section */}
-                <div className="space-y-4 pt-4 border-t">
-                  <div className="flex space-x-2">
-                    <Input
-                      placeholder="Write a comment..."
-                      value={newComment[post.id] || ''}
-                      onChange={(e) => setNewComment({
-                        ...newComment,
-                        [post.id]: e.target.value
-                      })}
-                    />
-                    <Button
-                      onClick={() => handleCreateComment(post.id)}
-                      disabled={!newComment[post.id]?.trim()}
-                    >
-                      Send
-                    </Button>
-                  </div>
-                  
-                  {post.comments?.map((comment: Comment) => (
-                    <div key={comment.id} className="flex space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-sage-200 overflow-hidden flex-shrink-0">
-                        {comment.profile.avatar_url && (
-                          <img 
-                            src={comment.profile.avatar_url} 
-                            alt={comment.profile.name}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1 bg-sage-50 rounded-lg p-3">
-                        <div className="font-semibold text-sm">{comment.profile.name}</div>
-                        <p className="text-sm">{comment.content}</p>
-                        <span className="text-xs text-sage-500">
-                          {new Date(comment.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
             ))
@@ -316,7 +350,6 @@ const LiveFeed = () => {
       </main>
     </div>
   );
-
 };
 
 export default LiveFeed;
