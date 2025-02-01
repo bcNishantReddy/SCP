@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, Mail, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const roles = [
   { value: "student", label: "Student" },
@@ -37,17 +38,28 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement actual registration
-      console.log("Signing up with:", formData);
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+            role: formData.role,
+          },
+        },
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Registration Successful!",
         description: "Please wait for admin approval to access your account.",
       });
       navigate("/auth/pending");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
