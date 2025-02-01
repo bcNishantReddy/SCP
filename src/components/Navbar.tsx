@@ -31,7 +31,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
             <Link to="/" className="text-xl font-bold text-sage-700">
-              Platform
+              Bossy
             </Link>
             <div className="hidden md:flex space-x-4">
               <NavLink to="/" icon={<Home size={18} />} label="Feed" />

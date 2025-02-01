@@ -10,7 +10,7 @@ const Opportunities = () => {
       <Navbar />
       <main className="container mx-auto px-4 pt-20">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h1 className="text-2xl font-bold text-sage-800">Opportunities</h1>
             <AddOpportunityModal />
           </div>
@@ -27,11 +27,11 @@ const Opportunities = () => {
             {[1, 2, 3, 4].map((opportunity) => (
               <div
                 key={opportunity}
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <div className="p-3 bg-sage-100 rounded-lg">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                  <div className="flex items-start space-x-4 w-full sm:w-auto">
+                    <div className="p-3 bg-sage-100 rounded-lg shrink-0">
                       {opportunity % 3 === 0 ? (
                         <Briefcase className="h-6 w-6 text-sage-600" />
                       ) : opportunity % 3 === 1 ? (
@@ -40,7 +40,7 @@ const Opportunities = () => {
                         <GraduationCap className="h-6 w-6 text-sage-600" />
                       )}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-semibold text-lg mb-1">
                         {opportunity % 3 === 0
                           ? "Summer Internship"
@@ -49,14 +49,16 @@ const Opportunities = () => {
                           : "Mentorship Program"}
                       </h3>
                       <p className="text-sage-600 text-sm mb-2">Company/Institution Name</p>
-                      <div className="flex items-center space-x-4 text-sm text-sage-500">
+                      <div className="flex flex-wrap gap-2 text-sm text-sage-500">
                         <span>Location: Remote</span>
+                        <span>•</span>
                         <span>Duration: 3 months</span>
+                        <span>•</span>
                         <span>Posted: 2 days ago</span>
                       </div>
                     </div>
                   </div>
-                  <Button variant="outline" className="text-sage-600 hover:text-sage-700">
+                  <Button variant="outline" className="w-full sm:w-auto text-sage-600 hover:text-sage-700">
                     Apply Now
                   </Button>
                 </div>
