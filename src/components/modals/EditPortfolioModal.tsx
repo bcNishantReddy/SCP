@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,17 +12,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Upload } from "lucide-react";
+import { Edit2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-export function UploadPortfolioModal() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+interface Portfolio {
+  id: string;
+  title: string;
+  description: string;
+  file_url: string;
+}
+
+interface EditPortfolioModalProps {
+  portfolio: Portfolio;
+  onUpdate: () => void;
+}
+
+export function EditPortfolioModal({ portfolio, onUpdate }: EditPortfolioModalProps) {
+  const [title, setTitle] = useState(portfolio.title);
+  const [description, setDescription] = useState(portfolio.description);
   const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setTitle(portfolio.title);
+    setDescription(portfolio.description);
+  }, [portfolio]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -30,73 +47,79 @@ export function UploadPortfolioModal() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!file || !title || !description) {
+  const handleUpdate = async () => {
+    if (!title || !description) {
       toast({
         title: "Missing fields",
-        description: "Please fill in all fields and upload a PDF file",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
 
-    setIsUploading(true);
+    setIsUpdating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      let fileUrl = portfolio.file_url;
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const { error: uploadError, data } = await supabase.storage
-        .from('files')
-        .upload(`portfolios/${fileName}`, file);
+      if (file) {
+        // Upload new file if provided
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const { error: uploadError, data } = await supabase.storage
+          .from('files')
+          .upload(`portfolios/${fileName}`, file);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
+        fileUrl = data.path;
 
-      const { error: dbError } = await supabase
+        // Delete old file
+        await supabase.storage
+          .from('files')
+          .remove([portfolio.file_url]);
+      }
+
+      const { error: updateError } = await supabase
         .from('portfolios')
-        .insert({
+        .update({
           title,
           description,
-          file_url: data.path,
-          user_id: user.id,
-        });
+          file_url: fileUrl,
+        })
+        .eq('id', portfolio.id);
 
-      if (dbError) throw dbError;
+      if (updateError) throw updateError;
 
       toast({
         title: "Success",
-        description: "Portfolio uploaded successfully",
+        description: "Portfolio updated successfully",
       });
       setIsOpen(false);
-      setTitle("");
-      setDescription("");
-      setFile(null);
+      onUpdate();
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("Update error:", error);
       toast({
         title: "Error",
-        description: "Failed to upload portfolio",
+        description: "Failed to update portfolio",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+      setIsUpdating(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-sage-600 hover:bg-sage-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Upload Portfolio
+        <Button variant="outline" size="sm">
+          <Edit2 className="h-4 w-4 mr-2" />
+          Edit
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Upload Portfolio</DialogTitle>
+          <DialogTitle>Edit Portfolio</DialogTitle>
           <DialogDescription>
-            Share your work and achievements with the community.
+            Update your portfolio details.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -104,22 +127,25 @@ export function UploadPortfolioModal() {
             <Label htmlFor="portfolio-title">Portfolio Title</Label>
             <Input 
               id="portfolio-title" 
-              placeholder="Enter portfolio title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
-            <Label>Portfolio File (PDF)</Label>
+            <Label>Update Portfolio File (PDF)</Label>
             <Input
               type="file"
               accept=".pdf"
               onChange={handleFileChange}
               className="cursor-pointer"
             />
-            {file && (
+            {file ? (
               <p className="text-sm text-sage-600">
-                Selected file: {file.name}
+                New file selected: {file.name}
+              </p>
+            ) : (
+              <p className="text-sm text-sage-600">
+                Current file: {portfolio.file_url.split('/').pop()}
               </p>
             )}
           </div>
@@ -127,7 +153,6 @@ export function UploadPortfolioModal() {
             <Label htmlFor="portfolio-description">Description</Label>
             <Textarea
               id="portfolio-description"
-              placeholder="Describe your portfolio..."
               className="min-h-[100px]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -140,10 +165,10 @@ export function UploadPortfolioModal() {
           </Button>
           <Button 
             className="bg-sage-600 hover:bg-sage-700"
-            onClick={handleSubmit}
-            disabled={isUploading}
+            onClick={handleUpdate}
+            disabled={isUpdating}
           >
-            {isUploading ? "Uploading..." : "Upload Portfolio"}
+            {isUpdating ? "Updating..." : "Update Portfolio"}
           </Button>
         </DialogFooter>
       </DialogContent>
