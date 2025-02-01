@@ -88,12 +88,14 @@ export const PortfolioCard = ({ portfolio, currentUserId, onDelete }: PortfolioC
 
   const handleDelete = async () => {
     try {
+      // Delete file from storage
       const { error: deleteFileError } = await supabase.storage
         .from('files')
         .remove([portfolio.file_url]);
 
       if (deleteFileError) throw deleteFileError;
 
+      // Delete portfolio record
       const { error: deletePortfolioError } = await supabase
         .from('portfolios')
         .delete()

@@ -6,12 +6,14 @@ import { Edit, Mail, Link2, MapPin, Building2, Calendar } from "lucide-react";
 import { EditProfileModal } from "@/components/modals/EditProfileModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PortfolioCard } from "@/components/portfolios/PortfolioCard";
+import { ProjectCard } from "@/components/projects/ProjectCard";
 
 const Profile = () => {
   const navigate = useNavigate();
 
   // Fetch current user's profile data
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -28,15 +30,56 @@ const Profile = () => {
     },
   });
 
+  // Fetch user's portfolios
+  const { data: portfolios, isLoading: portfoliosLoading } = useQuery({
+    queryKey: ['userPortfolios'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('portfolios')
+        .select(`
+          *,
+          profiles:user_id (
+            name,
+            avatar_url
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch user's projects
+  const { data: projects, isLoading: projectsLoading } = useQuery({
+    queryKey: ['userProjects'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Check if profile needs to be completed
   useEffect(() => {
     if (profile && !profile.name) {
-      // Show toast or modal prompting user to complete profile
       console.log("Profile needs to be completed");
     }
   }, [profile]);
 
-  if (isLoading) {
+  if (profileLoading || portfoliosLoading || projectsLoading) {
     return <div>Loading...</div>;
   }
 
@@ -96,7 +139,49 @@ const Profile = () => {
               </p>
             </div>
 
-            {/* Experience */}
+            {/* Portfolios Section */}
+            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
+              <h2 className="text-lg font-semibold mb-4">My Portfolios</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {portfolios?.map((portfolio) => (
+                  <PortfolioCard
+                    key={portfolio.id}
+                    portfolio={portfolio}
+                    currentUserId={profile?.id}
+                    onDelete={() => {
+                      // Refetch portfolios after deletion
+                      window.location.reload();
+                    }}
+                  />
+                ))}
+                {portfolios?.length === 0 && (
+                  <p className="text-sage-600 col-span-2">No portfolios yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Projects Section */}
+            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
+              <h2 className="text-lg font-semibold mb-4">My Projects</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {projects?.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    currentUserId={profile?.id}
+                    onDelete={() => {
+                      // Refetch projects after deletion
+                      window.location.reload();
+                    }}
+                  />
+                ))}
+                {projects?.length === 0 && (
+                  <p className="text-sage-600 col-span-2">No projects yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Experience Section */}
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
               <h2 className="text-lg font-semibold mb-4">Experience</h2>
               <div className="space-y-6">
