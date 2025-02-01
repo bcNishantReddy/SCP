@@ -9,24 +9,27 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 
 const Opportunities = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
+      if (!user?.id) return null;
+      
       const { data, error } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", user?.id)
+        .eq("id", user.id)
         .single();
 
       if (error) throw error;
       return data;
     },
+    enabled: !!user?.id, // Only run query when we have a user ID
   });
 
-  const { data: opportunities, isLoading } = useQuery({
+  const { data: opportunities, isLoading: opportunitiesLoading } = useQuery({
     queryKey: ["opportunities"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,6 +42,7 @@ const Opportunities = () => {
     },
   });
 
+  const isLoading = authLoading || profileLoading || opportunitiesLoading;
   const canCreateOpportunity = profile?.role && ["admin", "faculty", "investor", "alumni"].includes(profile.role);
 
   const filteredOpportunities = opportunities?.filter(
