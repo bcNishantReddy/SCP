@@ -8,6 +8,14 @@ import { EditPortfolioModal } from "@/components/modals/EditPortfolioModal";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -56,6 +64,7 @@ const Portfolios = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log("Fetched portfolios:", data);
       setPortfolios(data || []);
     } catch (error) {
       console.error("Error fetching portfolios:", error);
@@ -169,19 +178,18 @@ const Portfolios = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPortfolios.map((portfolio) => (
-              <div
-                key={portfolio.id}
-                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="p-4">
+              <Card key={portfolio.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="h-12 w-12 rounded-full bg-sage-200">
-                      {portfolio.profiles.avatar_url && (
+                    <div className="h-12 w-12 rounded-full bg-sage-200 flex items-center justify-center">
+                      {portfolio.profiles.avatar_url ? (
                         <img
                           src={portfolio.profiles.avatar_url}
                           alt={portfolio.profiles.name}
                           className="h-full w-full rounded-full object-cover"
                         />
+                      ) : (
+                        <FileText className="h-6 w-6 text-sage-600" />
                       )}
                     </div>
                     <div>
@@ -191,23 +199,24 @@ const Portfolios = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="bg-sage-50 rounded-lg p-4 mb-4">
-                    <FileText className="h-8 w-8 text-sage-600 mx-auto mb-2" />
-                    <p className="text-center font-medium mb-1">{portfolio.title}</p>
-                    <p className="text-center text-sm text-sage-600">{portfolio.description}</p>
-                  </div>
+                  <CardTitle className="text-xl">{portfolio.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-sm">
+                    {portfolio.description}
+                  </CardDescription>
+                </CardContent>
+                <CardFooter className="flex justify-between">
                   <div className="flex space-x-2">
                     <Button 
-                      variant="outline" 
-                      className="flex-1"
+                      variant="outline"
                       onClick={() => handlePreview(portfolio.file_url)}
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Preview
                     </Button>
                     <Button 
-                      variant="outline" 
-                      className="flex-1"
+                      variant="outline"
                       onClick={() => handleDownload(portfolio.file_url, portfolio.title)}
                     >
                       <Download className="h-4 w-4 mr-2" />
@@ -215,14 +224,14 @@ const Portfolios = () => {
                     </Button>
                   </div>
                   {currentUserId === portfolio.user_id && (
-                    <div className="flex space-x-2 mt-2">
+                    <div className="flex space-x-2">
                       <EditPortfolioModal 
                         portfolio={portfolio} 
                         onUpdate={fetchPortfolios}
                       />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                          <Button variant="outline" className="text-red-600 hover:text-red-700">
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </Button>
@@ -247,8 +256,8 @@ const Portfolios = () => {
                       </AlertDialog>
                     </div>
                   )}
-                </div>
-              </div>
+                </CardFooter>
+              </Card>
             ))}
           </div>
         </div>
