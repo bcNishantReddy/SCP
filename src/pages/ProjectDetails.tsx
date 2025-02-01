@@ -32,7 +32,8 @@ const ProjectDetails = () => {
         .from('projects')
         .select(`
           *,
-          profiles:user_id (
+          owner:profiles!projects_user_id_fkey (
+            id,
             name,
             title,
             avatar_url
@@ -53,7 +54,8 @@ const ProjectDetails = () => {
         .from('project_join_requests')
         .select(`
           *,
-          profiles:user_id (
+          profiles!project_join_requests_user_id_fkey (
+            id,
             name,
             title,
             avatar_url
@@ -158,33 +160,35 @@ const ProjectDetails = () => {
             
             <div className="space-y-4">
               {/* Project Owner */}
-              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="flex-shrink-0">
-                  {project.profiles.avatar_url ? (
-                    <img 
-                      src={project.profiles.avatar_url} 
-                      alt={project.profiles.name}
-                      className="h-12 w-12 rounded-full"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 bg-emerald-200 rounded-full flex items-center justify-center">
-                      <span className="text-emerald-700 font-medium">
-                        {project.profiles.name?.charAt(0)}
-                      </span>
-                    </div>
-                  )}
+              {project.owner && (
+                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex-shrink-0">
+                    {project.owner.avatar_url ? (
+                      <img 
+                        src={project.owner.avatar_url} 
+                        alt={project.owner.name}
+                        className="h-12 w-12 rounded-full"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 bg-emerald-200 rounded-full flex items-center justify-center">
+                        <span className="text-emerald-700 font-medium">
+                          {project.owner.name?.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-medium">{project.owner.name}</h3>
+                    <p className="text-sm text-muted-foreground">Project Owner • {project.owner.title}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">{project.profiles.name}</h3>
-                  <p className="text-sm text-muted-foreground">Project Owner • {project.profiles.title}</p>
-                </div>
-              </div>
+              )}
 
               {/* Approved Team Members */}
               {approvedRequests.map((member) => (
                 <div key={member.id} className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
                   <div className="flex-shrink-0">
-                    {member.profiles.avatar_url ? (
+                    {member.profiles?.avatar_url ? (
                       <img 
                         src={member.profiles.avatar_url} 
                         alt={member.profiles.name}
@@ -193,14 +197,14 @@ const ProjectDetails = () => {
                     ) : (
                       <div className="h-12 w-12 bg-emerald-200 rounded-full flex items-center justify-center">
                         <span className="text-emerald-700 font-medium">
-                          {member.profiles.name?.charAt(0)}
+                          {member.profiles?.name?.charAt(0)}
                         </span>
                       </div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-medium">{member.profiles.name}</h3>
-                    <p className="text-sm text-muted-foreground">Team Member • {member.profiles.title}</p>
+                    <h3 className="font-medium">{member.profiles?.name}</h3>
+                    <p className="text-sm text-muted-foreground">Team Member • {member.profiles?.title}</p>
                   </div>
                 </div>
               ))}
@@ -213,7 +217,7 @@ const ProjectDetails = () => {
                     <div key={request.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg mb-2">
                       <div className="flex items-center gap-4">
                         <div className="flex-shrink-0">
-                          {request.profiles.avatar_url ? (
+                          {request.profiles?.avatar_url ? (
                             <img 
                               src={request.profiles.avatar_url} 
                               alt={request.profiles.name}
@@ -222,14 +226,14 @@ const ProjectDetails = () => {
                           ) : (
                             <div className="h-12 w-12 bg-emerald-200 rounded-full flex items-center justify-center">
                               <span className="text-emerald-700 font-medium">
-                                {request.profiles.name?.charAt(0)}
+                                {request.profiles?.name?.charAt(0)}
                               </span>
                             </div>
                           )}
                         </div>
                         <div>
-                          <h3 className="font-medium">{request.profiles.name}</h3>
-                          <p className="text-sm text-muted-foreground">{request.profiles.title}</p>
+                          <h3 className="font-medium">{request.profiles?.name}</h3>
+                          <p className="text-sm text-muted-foreground">{request.profiles?.title}</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
