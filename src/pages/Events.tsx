@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, MapPin, Users } from "lucide-react";
 import { CreateEventModal } from "@/components/modals/CreateEventModal";
-import { EventRegistrationModal } from "@/components/modals/EventRegistrationModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -28,6 +27,11 @@ const Events = () => {
     },
   });
 
+  const truncateText = (text: string, limit: number) => {
+    if (text.length <= limit) return text;
+    return text.slice(0, limit) + "...";
+  };
+
   return (
     <div className="min-h-screen bg-sage-50">
       <Navbar />
@@ -50,9 +54,8 @@ const Events = () => {
               ))
             ) : (
               events?.map((event) => (
-                <Link
+                <div
                   key={event.id}
-                  to={`/events/${event.id}`}
                   className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                 >
                   <div className="h-48 bg-sage-200" />
@@ -61,23 +64,29 @@ const Events = () => {
                       <Calendar className="h-4 w-4" />
                       <span>{format(new Date(event.date), "PPP • p")}</span>
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
+                    <h3 className="font-semibold text-lg mb-2">
+                      {truncateText(event.title, 50)}
+                    </h3>
                     <p className="text-sage-600 text-sm mb-4">
-                      {event.description}
+                      {truncateText(event.description, 100)}
                     </p>
                     <div className="flex items-center space-x-4 text-sm text-sage-500 mb-4">
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 mr-1" />
-                        <span>{event.location}</span>
+                        <span>{truncateText(event.location, 30)}</span>
                       </div>
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-1" />
                         <span>{event.event_registrations.length} attending</span>
                       </div>
                     </div>
-                    <EventRegistrationModal />
+                    <Link to={`/events/${event.id}`}>
+                      <Button className="w-full bg-sage-600 hover:bg-sage-700">
+                        View Details
+                      </Button>
+                    </Link>
                   </div>
-                </Link>
+                </div>
               ))
             )}
           </div>

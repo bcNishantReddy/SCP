@@ -12,68 +12,63 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
-export function CreateEventModal() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
+interface EditEventModalProps {
+  event: {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    location: string;
+  };
+}
+
+export function EditEventModal({ event }: EditEventModalProps) {
+  const [title, setTitle] = useState(event.title);
+  const [description, setDescription] = useState(event.description);
+  const [date, setDate] = useState(event.date.split('T')[0]);
+  const [time, setTime] = useState(event.date.split('T')[1].split('.')[0]);
+  const [location, setLocation] = useState(event.location);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handleCreate = async () => {
-    if (!title || !description || !date || !time || !location) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSave = async () => {
     try {
       setIsLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       const combinedDate = new Date(`${date}T${time}`).toISOString();
 
       const { error } = await supabase
         .from("events")
-        .insert({
+        .update({
           title,
           description,
           date: combinedDate,
           location,
-          user_id: user.id,
-        });
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", event.id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Event created successfully",
+        description: "Event updated successfully",
       });
 
+      queryClient.invalidateQueries({ queryKey: ["event", event.id] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
       setIsOpen(false);
-      setTitle("");
-      setDescription("");
-      setDate("");
-      setTime("");
-      setLocation("");
     } catch (error) {
-      console.error("Error creating event:", error);
+      console.error("Error updating event:", error);
       toast({
         title: "Error",
-        description: "Failed to create event",
+        description: "Failed to update event",
         variant: "destructive",
       });
     } finally {
@@ -84,16 +79,16 @@ export function CreateEventModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-sage-600 hover:bg-sage-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Event
+        <Button variant="outline">
+          <Edit className="h-4 w-4 mr-2" />
+          Edit Event
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Create New Event</DialogTitle>
+          <DialogTitle>Edit Event</DialogTitle>
           <DialogDescription>
-            Plan and schedule a new event.
+            Update your event information.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -103,7 +98,6 @@ export function CreateEventModal() {
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter event title"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -132,7 +126,6 @@ export function CreateEventModal() {
               id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter location"
             />
           </div>
           <div className="grid gap-2">
@@ -141,7 +134,6 @@ export function CreateEventModal() {
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the event..."
               className="min-h-[100px]"
             />
           </div>
@@ -151,11 +143,11 @@ export function CreateEventModal() {
             Cancel
           </Button>
           <Button
-            onClick={handleCreate}
+            onClick={handleSave}
             disabled={isLoading}
             className="bg-sage-600 hover:bg-sage-700"
           >
-            Create Event
+            Save Changes
           </Button>
         </DialogFooter>
       </DialogContent>

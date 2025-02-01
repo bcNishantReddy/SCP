@@ -5,9 +5,18 @@ import { Calendar, MapPin, Users } from "lucide-react";
 import { EventRegistrationModal } from "@/components/modals/EventRegistrationModal";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditEventModal } from "@/components/modals/EditEventModal";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export const EventDetails = () => {
   const { id } = useParams();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["event", id],
@@ -28,12 +37,37 @@ export const EventDetails = () => {
           )
         `)
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
     },
   });
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+
+      navigate("/events");
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete event",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return <EventDetailsSkeleton />;
@@ -43,12 +77,43 @@ export const EventDetails = () => {
     return <div>Event not found</div>;
   }
 
+  const isOwner = user?.id === event.user_id;
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="h-64 bg-sage-200" />
         <div className="p-6">
-          <h1 className="text-2xl font-bold mb-4">{event.title}</h1>
+          <div className="flex justify-between items-start mb-4">
+            <h1 className="text-2xl font-bold">{event.title}</h1>
+            {isOwner && (
+              <div className="flex space-x-2">
+                <EditEventModal event={event} />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">Delete Event</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this event? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
+          </div>
           
           <div className="flex items-center space-x-4 text-sage-600 mb-6">
             <div className="flex items-center">
