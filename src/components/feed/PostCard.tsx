@@ -31,7 +31,7 @@ export function PostCard({ post }: PostCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const toggleLike = useMutation<number, Error, ToggleLikeParams>({
+  const toggleLike = useMutation<number, Error, ToggleLikeParams, unknown>({
     mutationFn: async ({ postId, hasLiked }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
