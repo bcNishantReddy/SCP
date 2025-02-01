@@ -84,12 +84,20 @@ export function EditPortfolioModal({ portfolio, onUpdate }: EditPortfolioModalPr
           .upload(`portfolios/${fileName}`, file);
 
         if (uploadError) throw uploadError;
-        fileUrl = data.path;
-
-        // Delete old file
-        await supabase.storage
+        
+        // Get the full path
+        const { data: { publicUrl } } = supabase.storage
           .from('files')
-          .remove([portfolio.file_url]);
+          .getPublicUrl(`portfolios/${fileName}`);
+          
+        fileUrl = `portfolios/${fileName}`;
+
+        // Delete old file if it exists
+        if (portfolio.file_url) {
+          await supabase.storage
+            .from('files')
+            .remove([portfolio.file_url]);
+        }
       }
 
       const { error: updateError } = await supabase
@@ -98,6 +106,7 @@ export function EditPortfolioModal({ portfolio, onUpdate }: EditPortfolioModalPr
           title,
           description,
           file_url: fileUrl,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', portfolio.id);
 
