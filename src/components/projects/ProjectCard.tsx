@@ -1,10 +1,11 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Edit } from "lucide-react";
+import { Users, Edit, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 interface ProjectCardProps {
   project: {
@@ -20,6 +21,7 @@ interface ProjectCardProps {
 
 export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Fetch join requests for this project
   const { data: joinRequests } = useQuery({
@@ -64,13 +66,19 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
     request => request.user_id === currentUserId
   );
 
+  const handleViewDetails = () => {
+    navigate(`/projects/${project.id}`);
+  };
+
   return (
     <Card className="hover:shadow-lg transition-shadow">
-      {project.banner_url && (
+      {project.banner_url ? (
         <div 
           className="h-48 bg-cover bg-center rounded-t-lg" 
           style={{ backgroundImage: `url(${project.banner_url})` }}
         />
+      ) : (
+        <div className="h-48 bg-sage-500 rounded-t-lg" />
       )}
       <CardHeader>
         <div className="flex justify-between items-start">
@@ -81,7 +89,7 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
             </Badge>
           </div>
           {isOwner && (
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${project.id}/edit`)}>
               <Edit className="h-4 w-4" />
             </Button>
           )}
@@ -99,14 +107,24 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
             {joinRequests?.length || 0} members
           </span>
         </div>
-        {!isOwner && !hasRequestedToJoin && (
-          <Button onClick={handleJoinRequest}>
-            Request to Join
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleViewDetails}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            View Details
           </Button>
-        )}
-        {hasRequestedToJoin && (
-          <Badge variant="secondary">Request Pending</Badge>
-        )}
+          {!isOwner && !hasRequestedToJoin && (
+            <Button onClick={handleJoinRequest} size="sm">
+              Request to Join
+            </Button>
+          )}
+          {hasRequestedToJoin && (
+            <Badge variant="secondary">Request Pending</Badge>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

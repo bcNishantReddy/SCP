@@ -4,6 +4,7 @@ import Events from "@/pages/Events";
 import { EventDetails } from "@/components/events/EventDetails";
 import LiveFeed from "@/pages/LiveFeed";
 import Projects from "@/pages/Projects";
+import ProjectDetails from "@/pages/ProjectDetails";
 import Opportunities from "@/pages/Opportunities";
 import People from "@/pages/People";
 import Groups from "@/pages/Groups";
@@ -39,6 +40,14 @@ const App = () => {
             element={
               <AuthGuard>
                 <Projects />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/projects/:id"
+            element={
+              <AuthGuard>
+                <ProjectDetails />
               </AuthGuard>
             }
           />
