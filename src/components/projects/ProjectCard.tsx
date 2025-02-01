@@ -17,9 +17,10 @@ interface ProjectCardProps {
     user_id: string;
   };
   currentUserId: string | undefined;
+  onDelete?: () => void; // Make onDelete optional
 }
 
-export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
+export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -55,6 +56,8 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
         title: "Success",
         description: "Project deleted successfully",
       });
+      // Call the onDelete callback if provided
+      onDelete?.();
     },
     onError: (error: Error) => {
       toast({
