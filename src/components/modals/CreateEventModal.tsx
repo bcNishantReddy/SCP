@@ -23,6 +23,8 @@ export function CreateEventModal() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
+  const [registrationUrl, setRegistrationUrl] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -32,7 +34,7 @@ export function CreateEventModal() {
     if (!title || !description || !date || !time || !location) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -53,6 +55,8 @@ export function CreateEventModal() {
           date: combinedDate,
           location,
           user_id: user.id,
+          banner_url: bannerUrl,
+          registration_url: registrationUrl,
         });
 
       if (error) throw error;
@@ -69,6 +73,8 @@ export function CreateEventModal() {
       setDate("");
       setTime("");
       setLocation("");
+      setBannerUrl("");
+      setRegistrationUrl("");
     } catch (error) {
       console.error("Error creating event:", error);
       toast({
@@ -98,7 +104,7 @@ export function CreateEventModal() {
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
               value={title}
@@ -108,7 +114,7 @@ export function CreateEventModal() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date">Date *</Label>
               <Input
                 id="date"
                 type="date"
@@ -117,7 +123,7 @@ export function CreateEventModal() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="time">Time</Label>
+              <Label htmlFor="time">Time *</Label>
               <Input
                 id="time"
                 type="time"
@@ -127,7 +133,7 @@ export function CreateEventModal() {
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="location">Location *</Label>
             <Input
               id="location"
               value={location}
@@ -136,7 +142,25 @@ export function CreateEventModal() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="bannerUrl">Banner Image URL</Label>
+            <Input
+              id="bannerUrl"
+              value={bannerUrl}
+              onChange={(e) => setBannerUrl(e.target.value)}
+              placeholder="Enter banner image URL"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="registrationUrl">Registration URL</Label>
+            <Input
+              id="registrationUrl"
+              value={registrationUrl}
+              onChange={(e) => setRegistrationUrl(e.target.value)}
+              placeholder="Enter registration URL"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
               value={description}

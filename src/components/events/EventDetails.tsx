@@ -1,8 +1,7 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, MapPin, Users } from "lucide-react";
-import { EventRegistrationModal } from "@/components/modals/EventRegistrationModal";
+import { Calendar, MapPin, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EditEventModal } from "@/components/modals/EditEventModal";
@@ -10,7 +9,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 export const EventDetails = () => {
   const { id } = useParams();
@@ -25,16 +23,7 @@ export const EventDetails = () => {
         .from("events")
         .select(`
           *,
-          profiles:user_id (name, avatar_url, role),
-          event_registrations (
-            id,
-            user:user_id (
-              id,
-              name,
-              avatar_url,
-              role
-            )
-          )
+          profiles:user_id (name, avatar_url, role)
         `)
         .eq("id", id)
         .maybeSingle();
@@ -81,8 +70,26 @@ export const EventDetails = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      <Button 
+        variant="ghost" 
+        onClick={() => navigate("/events")}
+        className="mb-6"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Events
+      </Button>
+
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="h-64 bg-sage-200" />
+        {event.banner_url ? (
+          <img 
+            src={event.banner_url} 
+            alt={event.title} 
+            className="w-full h-64 object-cover"
+          />
+        ) : (
+          <div className="h-64 bg-sage-200" />
+        )}
+        
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <h1 className="text-2xl font-bold">{event.title}</h1>
@@ -128,42 +135,13 @@ export const EventDetails = () => {
 
           <p className="text-sage-600 mb-8">{event.description}</p>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-sage-600">
-              <Users className="h-5 w-5 mr-2" />
-              <span>{event.event_registrations.length} registered</span>
-            </div>
-            <EventRegistrationModal />
-          </div>
-
-          {event.profiles?.role === "admin" && event.event_registrations.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-lg font-semibold mb-4">Registered Users</h2>
-              <div className="space-y-4">
-                {event.event_registrations.map((registration) => (
-                  <div
-                    key={registration.id}
-                    className="flex items-center space-x-4 p-4 bg-sage-50 rounded-lg"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-sage-200 overflow-hidden">
-                      {registration.user.avatar_url && (
-                        <img
-                          src={registration.user.avatar_url}
-                          alt={registration.user.name}
-                          className="h-full w-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">{registration.user.name}</p>
-                      <p className="text-sm text-sage-600 capitalize">
-                        {registration.user.role}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {event.registration_url && (
+            <Button 
+              className="w-full bg-sage-600 hover:bg-sage-700"
+              onClick={() => window.open(event.registration_url, '_blank')}
+            >
+              Register for Event
+            </Button>
           )}
         </div>
       </div>
@@ -182,10 +160,7 @@ const EventDetailsSkeleton = () => (
           <Skeleton className="h-6 w-1/4" />
         </div>
         <Skeleton className="h-24 w-full mb-8" />
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-10 w-32" />
-        </div>
+        <Skeleton className="h-10 w-full" />
       </div>
     </div>
   </div>

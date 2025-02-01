@@ -226,31 +226,37 @@ export type Database = {
       }
       events: {
         Row: {
+          banner_url: string | null
           created_at: string | null
           date: string
           description: string
           id: string
           location: string
+          registration_url: string | null
           title: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          banner_url?: string | null
           created_at?: string | null
           date: string
           description: string
           id?: string
           location: string
+          registration_url?: string | null
           title: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          banner_url?: string | null
           created_at?: string | null
           date?: string
           description?: string
           id?: string
           location?: string
+          registration_url?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string

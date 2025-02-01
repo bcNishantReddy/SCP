@@ -24,6 +24,8 @@ interface EditEventModalProps {
     description: string;
     date: string;
     location: string;
+    banner_url?: string;
+    registration_url?: string;
   };
 }
 
@@ -33,6 +35,8 @@ export function EditEventModal({ event }: EditEventModalProps) {
   const [date, setDate] = useState(event.date.split('T')[0]);
   const [time, setTime] = useState(event.date.split('T')[1].split('.')[0]);
   const [location, setLocation] = useState(event.location);
+  const [bannerUrl, setBannerUrl] = useState(event.banner_url || "");
+  const [registrationUrl, setRegistrationUrl] = useState(event.registration_url || "");
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -50,6 +54,8 @@ export function EditEventModal({ event }: EditEventModalProps) {
           description,
           date: combinedDate,
           location,
+          banner_url: bannerUrl,
+          registration_url: registrationUrl,
           updated_at: new Date().toISOString(),
         })
         .eq("id", event.id);
@@ -126,6 +132,24 @@ export function EditEventModal({ event }: EditEventModalProps) {
               id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="bannerUrl">Banner Image URL</Label>
+            <Input
+              id="bannerUrl"
+              value={bannerUrl}
+              onChange={(e) => setBannerUrl(e.target.value)}
+              placeholder="Enter banner image URL"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="registrationUrl">Registration URL</Label>
+            <Input
+              id="registrationUrl"
+              value={registrationUrl}
+              onChange={(e) => setRegistrationUrl(e.target.value)}
+              placeholder="Enter registration URL"
             />
           </div>
           <div className="grid gap-2">
