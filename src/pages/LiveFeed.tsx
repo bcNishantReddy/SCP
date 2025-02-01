@@ -150,8 +150,8 @@ const LiveFeed = () => {
         .from('posts')
         .update({ 
           likes_count: hasLiked 
-            ? supabase.raw('likes_count - 1') 
-            : supabase.raw('likes_count + 1') 
+            ? supabase.sql`likes_count - 1`
+            : supabase.sql`likes_count + 1`
         })
         .eq('id', postId)
         .select()
