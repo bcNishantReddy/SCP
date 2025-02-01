@@ -15,6 +15,7 @@ interface Post {
   created_at: string;
   image_url: string | null;
   likes_count: number;
+  comments: Comment[];
   profile: {
     name: string;
     avatar_url: string | null;

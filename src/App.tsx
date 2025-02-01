@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Events from "@/pages/Events";
 import { EventDetails } from "@/components/events/EventDetails";
-import Feed from "@/pages/Feed";
+import LiveFeed from "@/pages/LiveFeed";
 import Projects from "@/pages/Projects";
 import Opportunities from "@/pages/Opportunities";
 import People from "@/pages/People";
@@ -14,7 +14,7 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Feed />} />
+        <Route path="/" element={<LiveFeed />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/opportunities" element={<Opportunities />} />
         <Route path="/people" element={<People />} />

@@ -16,7 +16,7 @@ export const EventDetails = () => {
         .from("events")
         .select(`
           *,
-          profiles:user_id (name, avatar_url),
+          profiles:user_id (name, avatar_url, role),
           event_registrations (
             id,
             user:user_id (
