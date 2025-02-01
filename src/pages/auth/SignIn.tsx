@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, Mail } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -19,17 +20,22 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement actual authentication
-      console.log("Signing in with:", { email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Success!",
         description: "You have successfully signed in.",
       });
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Invalid credentials. Please try again.",
+        description: error.message || "Invalid credentials. Please try again.",
         variant: "destructive",
       });
     } finally {
