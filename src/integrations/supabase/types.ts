@@ -787,7 +787,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      decrement_likes: {
+        Args: {
+          post_id: string
+        }
+        Returns: number
+      }
+      increment_likes: {
+        Args: {
+          post_id: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       user_role: "admin" | "student" | "faculty" | "investor" | "alumni"

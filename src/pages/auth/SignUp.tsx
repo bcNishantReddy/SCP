@@ -33,8 +33,27 @@ export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const validatePassword = (password: string) => {
+    if (password.length < 6) {
+      return "Password must be at least 6 characters long";
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password before submission
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      toast({
+        title: "Invalid Password",
+        description: passwordError,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -57,9 +76,18 @@ export default function SignUp() {
       });
       navigate("/auth/pending");
     } catch (error: any) {
+      let errorMessage = error.message;
+      // Parse the error message if it's in JSON format
+      try {
+        const parsedError = JSON.parse(error.message);
+        errorMessage = parsedError.message || errorMessage;
+      } catch {
+        // If parsing fails, use the original error message
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Something went wrong. Please try again.",
+        description: errorMessage || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -118,11 +146,13 @@ export default function SignUp() {
                 id="password"
                 type="password"
                 className="pl-10"
+                placeholder="Min. 6 characters"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
                 required
+                minLength={6}
               />
             </div>
           </div>
