@@ -799,6 +799,12 @@ export type Database = {
         }
         Returns: number
       }
+      is_opportunity_closed: {
+        Args: {
+          deadline: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "admin" | "student" | "faculty" | "investor" | "alumni"

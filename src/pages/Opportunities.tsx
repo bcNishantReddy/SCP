@@ -1,10 +1,52 @@
 import Navbar from "@/components/Navbar";
-import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Search, Briefcase, Building2, GraduationCap } from "lucide-react";
 import { AddOpportunityModal } from "@/components/modals/AddOpportunityModal";
+import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
+import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 
 const Opportunities = () => {
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user?.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: opportunities, isLoading } = useQuery({
+    queryKey: ["opportunities"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("opportunities")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const canCreateOpportunity = profile?.role && ["admin", "faculty", "investor", "alumni"].includes(profile.role);
+
+  const filteredOpportunities = opportunities?.filter(
+    (opportunity) =>
+      opportunity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      opportunity.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-sage-50">
       <Navbar />
@@ -12,7 +54,7 @@ const Opportunities = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h1 className="text-2xl font-bold text-sage-800">Opportunities</h1>
-            <AddOpportunityModal />
+            {canCreateOpportunity && <AddOpportunityModal />}
           </div>
 
           <div className="relative mb-6">
@@ -20,50 +62,24 @@ const Opportunities = () => {
             <Input
               placeholder="Search opportunities..."
               className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
           <div className="space-y-4">
-            {[1, 2, 3, 4].map((opportunity) => (
-              <div
-                key={opportunity}
-                className="bg-white rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                  <div className="flex items-start space-x-4 w-full sm:w-auto">
-                    <div className="p-3 bg-sage-100 rounded-lg shrink-0">
-                      {opportunity % 3 === 0 ? (
-                        <Briefcase className="h-6 w-6 text-sage-600" />
-                      ) : opportunity % 3 === 1 ? (
-                        <Building2 className="h-6 w-6 text-sage-600" />
-                      ) : (
-                        <GraduationCap className="h-6 w-6 text-sage-600" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-1">
-                        {opportunity % 3 === 0
-                          ? "Summer Internship"
-                          : opportunity % 3 === 1
-                          ? "Research Position"
-                          : "Mentorship Program"}
-                      </h3>
-                      <p className="text-sage-600 text-sm mb-2">Company/Institution Name</p>
-                      <div className="flex flex-wrap gap-2 text-sm text-sage-500">
-                        <span>Location: Remote</span>
-                        <span>•</span>
-                        <span>Duration: 3 months</span>
-                        <span>•</span>
-                        <span>Posted: 2 days ago</span>
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="outline" className="w-full sm:w-auto text-sage-600 hover:text-sage-700">
-                    Apply Now
-                  </Button>
-                </div>
-              </div>
-            ))}
+            {isLoading ? (
+              <div>Loading...</div>
+            ) : filteredOpportunities?.length === 0 ? (
+              <div className="text-center text-sage-600">No opportunities found</div>
+            ) : (
+              filteredOpportunities?.map((opportunity) => (
+                <OpportunityCard
+                  key={opportunity.id}
+                  opportunity={opportunity}
+                />
+              ))
+            )}
           </div>
         </div>
       </main>

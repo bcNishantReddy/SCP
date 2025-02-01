@@ -14,6 +14,7 @@ import Tutorials from "@/pages/Tutorials";
 import SignIn from "@/pages/auth/SignIn";
 import SignUp from "@/pages/auth/SignUp";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { OpportunityDetails } from "@/components/opportunities/OpportunityDetails";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,14 @@ const App = () => {
             element={
               <AuthGuard>
                 <Opportunities />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/opportunities/:id"
+            element={
+              <AuthGuard>
+                <OpportunityDetails />
               </AuthGuard>
             }
           />
