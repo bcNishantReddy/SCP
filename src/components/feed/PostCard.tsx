@@ -21,18 +21,18 @@ interface PostCardProps {
   };
 }
 
+interface ToggleLikeParams {
+  postId: string;
+  hasLiked: boolean;
+}
+
 export function PostCard({ post }: PostCardProps) {
   const [isLiking, setIsLiking] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  interface ToggleLikeParams {
-    postId: string;
-    hasLiked: boolean;
-  }
-
-  const toggleLike = useMutation({
-    mutationFn: async ({ postId, hasLiked }: ToggleLikeParams) => {
+  const toggleLike = useMutation<number, Error, ToggleLikeParams>({
+    mutationFn: async ({ postId, hasLiked }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
