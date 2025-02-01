@@ -20,6 +20,7 @@ export function PostList() {
 
       if (error) throw error;
 
+      // Get user's likes
       const { data: likes } = await supabase
         .from('post_likes')
         .select('post_id')

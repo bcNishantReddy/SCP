@@ -39,12 +39,22 @@ export function PostCard({ post }: PostCardProps) {
       setIsLiking(true);
 
       if (hasLiked) {
+        // Remove like
         await supabase
           .from('post_likes')
           .delete()
           .eq('post_id', postId)
           .eq('user_id', user.id);
+
+        // Decrement global count
+        const { data, error } = await supabase
+          .rpc('decrement_likes', { post_id: postId })
+          .single();
+
+        if (error) throw error;
+        return data;
       } else {
+        // Check if user already liked
         const { data: existingLike } = await supabase
           .from('post_likes')
           .select()
@@ -53,18 +63,20 @@ export function PostCard({ post }: PostCardProps) {
           .maybeSingle();
 
         if (!existingLike) {
+          // Add new like
           await supabase
             .from('post_likes')
             .insert([{ post_id: postId, user_id: user.id }]);
+
+          // Increment global count
+          const { data, error } = await supabase
+            .rpc('increment_likes', { post_id: postId })
+            .single();
+
+          if (error) throw error;
+          return data;
         }
       }
-
-      const { data, error } = await supabase
-        .rpc(hasLiked ? 'decrement_likes' : 'increment_likes', { post_id: postId })
-        .single();
-
-      if (error) throw error;
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -137,4 +149,4 @@ export function PostCard({ post }: PostCardProps) {
       </div>
     </div>
   );
-};
+}
