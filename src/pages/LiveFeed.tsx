@@ -77,7 +77,7 @@ const LiveFeed = () => {
         const fileExt = imageFile.name.split('.').pop();
         const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError, data } = await supabase.storage
           .from('files')
           .upload(filePath, imageFile);
 
