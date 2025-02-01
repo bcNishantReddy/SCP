@@ -36,7 +36,7 @@ export function EditProfileModal() {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profile) {
       setName(profile.name || "");
@@ -49,7 +49,7 @@ export function EditProfileModal() {
       .from('social_urls')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (socialUrls) {
       setWebsite(socialUrls.website_url || "");
