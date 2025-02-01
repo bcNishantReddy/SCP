@@ -12,7 +12,7 @@ import { ProjectHeader } from "@/components/projects/ProjectHeader";
 import { TeamSection } from "@/components/projects/TeamSection";
 
 const ProjectDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -30,6 +30,8 @@ const ProjectDetails = () => {
     queryKey: ['project', id],
     queryFn: async () => {
       console.log('Fetching project details for id:', id);
+      if (!id) throw new Error('Project ID is required');
+      
       const { data, error } = await supabase
         .from('projects')
         .select(`
@@ -51,12 +53,15 @@ const ProjectDetails = () => {
       console.log('Project data:', data);
       return data;
     },
+    enabled: !!id, // Only run query if id exists
   });
 
   const { data: joinRequests } = useQuery({
     queryKey: ['projectJoinRequests', id],
     queryFn: async () => {
       console.log('Fetching join requests for project:', id);
+      if (!id) throw new Error('Project ID is required');
+      
       const { data, error } = await supabase
         .from('project_join_requests')
         .select(`
@@ -77,10 +82,13 @@ const ProjectDetails = () => {
       console.log('Join requests:', data);
       return data;
     },
+    enabled: !!id, // Only run query if id exists
   });
 
   const handleJoinRequest = useMutation({
     mutationFn: async () => {
+      if (!id || !currentUserId) throw new Error('Project ID and user ID are required');
+      
       const { error } = await supabase
         .from('project_join_requests')
         .insert({
@@ -106,6 +114,25 @@ const ProjectDetails = () => {
       });
     },
   });
+
+  if (!id) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 pt-20">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Invalid Project ID</h1>
+            <Button 
+              className="mt-4"
+              onClick={() => navigate('/projects')}
+            >
+              Back to Projects
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (projectLoading) {
     return (
