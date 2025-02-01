@@ -132,23 +132,32 @@ const LiveFeed = () => {
       if (!user) throw new Error("Not authenticated");
 
       if (hasLiked) {
-        // Unlike
+        // Unlike - Delete the like record
         await supabase
           .from('post_likes')
           .delete()
           .eq('post_id', postId)
           .eq('user_id', user.id);
       } else {
-        // Like
-        await supabase
+        // Check if like already exists
+        const { data: existingLike } = await supabase
           .from('post_likes')
-          .insert([{ post_id: postId, user_id: user.id }]);
+          .select()
+          .eq('post_id', postId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (!existingLike) {
+          // Like - Insert new like record
+          await supabase
+            .from('post_likes')
+            .insert([{ post_id: postId, user_id: user.id }]);
+        }
       }
 
       // Update likes count using RPC functions
       const { data, error } = await supabase
-        .rpc(hasLiked ? 'decrement_likes' : 'increment_likes')
-        .eq('id', postId)
+        .rpc(hasLiked ? 'decrement_likes', { post_id: postId })
         .single();
 
       if (error) throw error;
