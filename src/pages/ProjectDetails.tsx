@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Users, Calendar, Edit, UserCheck, UserMinus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { format } from "date-fns";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 
 const ProjectDetails = () => {
