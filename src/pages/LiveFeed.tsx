@@ -145,16 +145,10 @@ const LiveFeed = () => {
           .insert([{ post_id: postId, user_id: user.id }]);
       }
 
-      // Update likes count using a direct increment/decrement
+      // Update likes count using RPC functions
       const { data, error } = await supabase
-        .from('posts')
-        .update({ 
-          likes_count: hasLiked 
-            ? supabase.rpc('decrement_likes')
-            : supabase.rpc('increment_likes')
-        })
+        .rpc(hasLiked ? 'decrement_likes' : 'increment_likes')
         .eq('id', postId)
-        .select()
         .single();
 
       if (error) throw error;
