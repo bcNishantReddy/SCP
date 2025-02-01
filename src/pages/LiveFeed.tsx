@@ -54,6 +54,7 @@ const LiveFeed = () => {
             id,
             content,
             user_id,
+            post_id,
             created_at,
             profile:profiles(name, avatar_url)
           )
@@ -65,7 +66,6 @@ const LiveFeed = () => {
     },
   });
 
-  // Create post mutation
   const createPost = useMutation({
     mutationFn: async (content: string) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -316,6 +316,7 @@ const LiveFeed = () => {
       </main>
     </div>
   );
+
 };
 
 export default LiveFeed;
