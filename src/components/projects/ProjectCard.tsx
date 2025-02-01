@@ -1,8 +1,8 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Edit, ExternalLink, UserPlus, Eye } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Users, UserPlus, Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +28,7 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
   const { data: joinRequests } = useQuery({
     queryKey: ['projectJoinRequests', project.id],
     queryFn: async () => {
+      console.log('Fetching join requests for project:', project.id);
       const { data, error } = await supabase
         .from('project_join_requests')
         .select('*')
@@ -63,13 +64,27 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
     }
   };
 
-  const hasRequestedToJoin = joinRequests?.some(
-    request => request.user_id === currentUserId
-  );
-
   const handleViewDetails = () => {
     navigate(`/projects/${project.id}`);
   };
+
+  // Get the current user's join request status
+  const userJoinRequest = joinRequests?.find(
+    request => request.user_id === currentUserId
+  );
+
+  // Calculate member count (including owner)
+  const approvedMembers = joinRequests?.filter(request => request.status === 'approved').length || 0;
+  const memberCount = approvedMembers + 1; // +1 for the owner
+
+  // Truncate title and description
+  const truncatedTitle = project.title.length > 50 
+    ? project.title.substring(0, 50) + '...'
+    : project.title;
+
+  const truncatedDescription = project.description.length > 100
+    ? project.description.substring(0, 100) + '...'
+    : project.description;
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -84,35 +99,23 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-xl">{project.title}</CardTitle>
+            <CardTitle className="text-xl">{truncatedTitle}</CardTitle>
             <Badge variant="secondary" className="mt-2">
               {project.category}
             </Badge>
           </div>
-          {isOwner && (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate(`/projects/${project.id}/edit`)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Project
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate(`/projects/${project.id}/team`)}>
-                <Users className="h-4 w-4 mr-2" />
-                Manage Team
-              </Button>
-            </div>
-          )}
         </div>
       </CardHeader>
       <CardContent>
         <CardDescription className="text-sm">
-          {project.description}
+          {truncatedDescription}
         </CardDescription>
       </CardContent>
       <CardFooter className="flex justify-between">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4" />
           <span className="text-sm text-muted-foreground">
-            {joinRequests?.length || 0} members
+            {memberCount} member{memberCount !== 1 ? 's' : ''}
           </span>
         </div>
         <div className="flex gap-2">
@@ -125,7 +128,7 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
             <Eye className="h-4 w-4 mr-2" />
             View Details
           </Button>
-          {!isOwner && !hasRequestedToJoin && (
+          {!isOwner && !userJoinRequest && (
             <Button 
               onClick={handleJoinRequest} 
               size="sm"
@@ -135,7 +138,7 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
               Request to Join
             </Button>
           )}
-          {hasRequestedToJoin && (
+          {!isOwner && userJoinRequest?.status === 'pending' && (
             <Badge variant="secondary" className="px-4 py-2">
               Request Pending
             </Badge>
