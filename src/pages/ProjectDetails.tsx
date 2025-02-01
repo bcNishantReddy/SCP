@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Users, Calendar, Edit, UserCheck, UserMinus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { format } from "date-fns";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/toast";
 import { useEffect, useState } from "react";
 
 const ProjectDetails = () => {
@@ -28,6 +28,7 @@ const ProjectDetails = () => {
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ['project', id],
     queryFn: async () => {
+      console.log('Fetching project details for id:', id);
       const { data, error } = await supabase
         .from('projects')
         .select(`
@@ -40,9 +41,13 @@ const ProjectDetails = () => {
           )
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching project:', error);
+        throw error;
+      }
+      console.log('Project data:', data);
       return data;
     },
   });
@@ -50,6 +55,7 @@ const ProjectDetails = () => {
   const { data: joinRequests } = useQuery({
     queryKey: ['projectJoinRequests', id],
     queryFn: async () => {
+      console.log('Fetching join requests for project:', id);
       const { data, error } = await supabase
         .from('project_join_requests')
         .select(`
@@ -63,7 +69,11 @@ const ProjectDetails = () => {
         `)
         .eq('project_id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching join requests:', error);
+        throw error;
+      }
+      console.log('Join requests:', data);
       return data;
     },
   });
@@ -115,7 +125,24 @@ const ProjectDetails = () => {
     );
   }
 
-  if (!project) return null;
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 pt-20">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Project not found</h1>
+            <Button 
+              className="mt-4"
+              onClick={() => navigate('/projects')}
+            >
+              Back to Projects
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
