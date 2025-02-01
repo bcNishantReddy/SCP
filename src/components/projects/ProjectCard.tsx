@@ -1,10 +1,10 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, Eye } from "lucide-react";
+import { Users, UserPlus, Eye, Edit, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 interface ProjectCardProps {
@@ -22,6 +22,7 @@ interface ProjectCardProps {
 export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isOwner = project.user_id === currentUserId;
 
   // Fetch join requests for this project
@@ -36,6 +37,31 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
       
       if (error) throw error;
       return data;
+    },
+  });
+
+  const deleteProject = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', project.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -68,6 +94,16 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
     navigate(`/projects/${project.id}`);
   };
 
+  const handleEdit = () => {
+    navigate(`/projects/${project.id}/edit`);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      deleteProject.mutate();
+    }
+  };
+
   // Get the current user's join request status
   const userJoinRequest = joinRequests?.find(
     request => request.user_id === currentUserId
@@ -77,13 +113,13 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
   const approvedMembers = joinRequests?.filter(request => request.status === 'approved').length || 0;
   const memberCount = approvedMembers + 1; // +1 for the owner
 
-  // Truncate title and description
-  const truncatedTitle = project.title.length > 30 
-    ? project.title.substring(0, 30) + '...'
+  // Truncate title and description with even shorter limits
+  const truncatedTitle = project.title.length > 25 
+    ? project.title.substring(0, 25) + '...'
     : project.title;
 
-  const truncatedDescription = project.description.length > 50
-    ? project.description.substring(0, 50) + '...'
+  const truncatedDescription = project.description.length > 40
+    ? project.description.substring(0, 40) + '...'
     : project.description;
 
   return (
@@ -104,6 +140,26 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
               {project.category}
             </Badge>
           </div>
+          {isOwner && (
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleEdit}
+                className="hover:bg-secondary"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleDelete}
+                className="hover:bg-red-100 hover:text-red-600"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>
