@@ -52,6 +52,22 @@ const App = () => {
             }
           />
           <Route
+            path="/projects/:id/edit"
+            element={
+              <AuthGuard>
+                <ProjectDetails />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/projects/:id/team"
+            element={
+              <AuthGuard>
+                <ProjectDetails />
+              </AuthGuard>
+            }
+          />
+          <Route
             path="/opportunities"
             element={
               <AuthGuard>

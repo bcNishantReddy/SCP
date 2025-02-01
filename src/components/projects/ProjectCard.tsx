@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Edit, ExternalLink } from "lucide-react";
+import { Users, Edit, ExternalLink, UserPlus, Eye } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ interface ProjectCardProps {
 export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isOwner = project.user_id === currentUserId;
 
   // Fetch join requests for this project
   const { data: joinRequests } = useQuery({
@@ -44,6 +45,7 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
         .insert({
           project_id: project.id,
           user_id: currentUserId,
+          status: 'pending'
         });
 
       if (error) throw error;
@@ -61,7 +63,6 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
     }
   };
 
-  const isOwner = project.user_id === currentUserId;
   const hasRequestedToJoin = joinRequests?.some(
     request => request.user_id === currentUserId
   );
@@ -78,7 +79,7 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
           style={{ backgroundImage: `url(${project.banner_url})` }}
         />
       ) : (
-        <div className="h-48 bg-sage-500 rounded-t-lg" />
+        <div className="h-48 bg-emerald-500 rounded-t-lg" />
       )}
       <CardHeader>
         <div className="flex justify-between items-start">
@@ -89,9 +90,16 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
             </Badge>
           </div>
           {isOwner && (
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${project.id}/edit`)}>
-              <Edit className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate(`/projects/${project.id}/edit`)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Project
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate(`/projects/${project.id}/team`)}>
+                <Users className="h-4 w-4 mr-2" />
+                Manage Team
+              </Button>
+            </div>
           )}
         </div>
       </CardHeader>
@@ -112,17 +120,25 @@ export const ProjectCard = ({ project, currentUserId }: ProjectCardProps) => {
             variant="outline" 
             size="sm"
             onClick={handleViewDetails}
+            className="hover:bg-secondary"
           >
-            <ExternalLink className="h-4 w-4 mr-2" />
+            <Eye className="h-4 w-4 mr-2" />
             View Details
           </Button>
           {!isOwner && !hasRequestedToJoin && (
-            <Button onClick={handleJoinRequest} size="sm">
+            <Button 
+              onClick={handleJoinRequest} 
+              size="sm"
+              className="bg-emerald-500 hover:bg-emerald-600"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
               Request to Join
             </Button>
           )}
           {hasRequestedToJoin && (
-            <Badge variant="secondary">Request Pending</Badge>
+            <Badge variant="secondary" className="px-4 py-2">
+              Request Pending
+            </Badge>
           )}
         </div>
       </CardFooter>

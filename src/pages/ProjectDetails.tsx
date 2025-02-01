@@ -1,15 +1,29 @@
-import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Users, Calendar, Edit } from "lucide-react";
+import { Users, Calendar, Edit, UserCheck, UserMinus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
+import { useEffect, useState } from "react";
 
 const ProjectDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [currentUserId, setCurrentUserId] = useState<string>();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id);
+    };
+    getUser();
+  }, []);
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ['project', id],
@@ -32,8 +46,8 @@ const ProjectDetails = () => {
     },
   });
 
-  const { data: collaborators } = useQuery({
-    queryKey: ['projectCollaborators', id],
+  const { data: joinRequests } = useQuery({
+    queryKey: ['projectJoinRequests', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('project_join_requests')
@@ -45,13 +59,41 @@ const ProjectDetails = () => {
             avatar_url
           )
         `)
-        .eq('project_id', id)
-        .eq('status', 'approved');
+        .eq('project_id', id);
       
       if (error) throw error;
       return data;
     },
   });
+
+  const updateRequestStatus = useMutation({
+    mutationFn: async ({ requestId, status }: { requestId: string, status: 'approved' | 'rejected' }) => {
+      const { error } = await supabase
+        .from('project_join_requests')
+        .update({ status })
+        .eq('id', requestId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectJoinRequests', id] });
+      toast({
+        title: "Success",
+        description: "Request status updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update request status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const isOwner = project?.user_id === currentUserId;
+  const pendingRequests = joinRequests?.filter(req => req.status === 'pending') || [];
+  const approvedRequests = joinRequests?.filter(req => req.status === 'approved') || [];
 
   if (projectLoading) {
     return (
@@ -84,7 +126,7 @@ const ProjectDetails = () => {
               style={{ backgroundImage: `url(${project.banner_url})` }}
             />
           ) : (
-            <div className="h-64 bg-sage-500 rounded-lg mb-6" />
+            <div className="h-64 bg-emerald-500 rounded-lg mb-6" />
           )}
 
           <div className="flex justify-between items-start mb-6">
@@ -94,10 +136,12 @@ const ProjectDetails = () => {
                 {project.category}
               </Badge>
             </div>
-            <Button variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Project
-            </Button>
+            {isOwner && (
+              <Button variant="outline" onClick={() => navigate(`/projects/${id}/edit`)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Project
+              </Button>
+            )}
           </div>
 
           <Card className="p-6 mb-6">
@@ -110,10 +154,6 @@ const ProjectDetails = () => {
           <Card className="p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Team</h2>
-              <Button variant="outline" size="sm">
-                <Users className="h-4 w-4 mr-2" />
-                Manage Team
-              </Button>
             </div>
             
             <div className="space-y-4">
@@ -127,8 +167,8 @@ const ProjectDetails = () => {
                       className="h-12 w-12 rounded-full"
                     />
                   ) : (
-                    <div className="h-12 w-12 bg-sage-200 rounded-full flex items-center justify-center">
-                      <span className="text-sage-700 font-medium">
+                    <div className="h-12 w-12 bg-emerald-200 rounded-full flex items-center justify-center">
+                      <span className="text-emerald-700 font-medium">
                         {project.profiles.name?.charAt(0)}
                       </span>
                     </div>
@@ -140,30 +180,80 @@ const ProjectDetails = () => {
                 </div>
               </div>
 
-              {/* Collaborators */}
-              {collaborators?.map((collaborator) => (
-                <div key={collaborator.id} className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+              {/* Approved Team Members */}
+              {approvedRequests.map((member) => (
+                <div key={member.id} className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
                   <div className="flex-shrink-0">
-                    {collaborator.profiles.avatar_url ? (
+                    {member.profiles.avatar_url ? (
                       <img 
-                        src={collaborator.profiles.avatar_url} 
-                        alt={collaborator.profiles.name}
+                        src={member.profiles.avatar_url} 
+                        alt={member.profiles.name}
                         className="h-12 w-12 rounded-full"
                       />
                     ) : (
-                      <div className="h-12 w-12 bg-sage-200 rounded-full flex items-center justify-center">
-                        <span className="text-sage-700 font-medium">
-                          {collaborator.profiles.name?.charAt(0)}
+                      <div className="h-12 w-12 bg-emerald-200 rounded-full flex items-center justify-center">
+                        <span className="text-emerald-700 font-medium">
+                          {member.profiles.name?.charAt(0)}
                         </span>
                       </div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-medium">{collaborator.profiles.name}</h3>
-                    <p className="text-sm text-muted-foreground">Collaborator • {collaborator.profiles.title}</p>
+                    <h3 className="font-medium">{member.profiles.name}</h3>
+                    <p className="text-sm text-muted-foreground">Team Member • {member.profiles.title}</p>
                   </div>
                 </div>
               ))}
+
+              {/* Pending Requests - Only visible to owner */}
+              {isOwner && pendingRequests.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium mb-4">Pending Requests</h3>
+                  {pendingRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg mb-2">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0">
+                          {request.profiles.avatar_url ? (
+                            <img 
+                              src={request.profiles.avatar_url} 
+                              alt={request.profiles.name}
+                              className="h-12 w-12 rounded-full"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 bg-emerald-200 rounded-full flex items-center justify-center">
+                              <span className="text-emerald-700 font-medium">
+                                {request.profiles.name?.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{request.profiles.name}</h3>
+                          <p className="text-sm text-muted-foreground">{request.profiles.title}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateRequestStatus.mutate({ requestId: request.id, status: 'approved' })}
+                        >
+                          <UserCheck className="h-4 w-4 mr-2" />
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateRequestStatus.mutate({ requestId: request.id, status: 'rejected' })}
+                        >
+                          <UserMinus className="h-4 w-4 mr-2" />
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
 
@@ -179,7 +269,7 @@ const ProjectDetails = () => {
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  {collaborators?.length || 0} team members
+                  {approvedRequests.length + 1} team members
                 </span>
               </div>
             </div>

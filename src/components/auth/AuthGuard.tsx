@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthGuardProps {
@@ -9,6 +9,7 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -16,6 +17,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           navigate("/auth/signin");
+        } else if (location.pathname === "/") {
+          navigate("/");
         }
       } catch (error) {
         console.error("Auth error:", error);
@@ -38,7 +41,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location]);
 
   if (isLoading) {
     return <div>Loading...</div>;
