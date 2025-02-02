@@ -42,6 +42,7 @@ export const PendingApprovalsSection = () => {
         .from("profiles")
         .select("id, role")
         .eq("id", user.id)
+        .eq("role", "admin")
         .maybeSingle();
 
       if (profileError) {
@@ -50,14 +51,10 @@ export const PendingApprovalsSection = () => {
       }
 
       if (!adminProfile) {
-        throw new Error("Admin profile not found");
+        throw new Error("Admin profile not found or user is not an admin");
       }
 
-      if (adminProfile.role !== 'admin') {
-        throw new Error("User is not an admin");
-      }
-
-      console.log("Logging admin action with admin profile:", adminProfile.id);
+      console.log("Logging admin action with admin profile:", adminProfile);
       
       // Use the admin's profile ID for the admin_actions record
       const { error: logError } = await supabase
