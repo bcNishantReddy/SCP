@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -98,7 +98,7 @@ const TutorialDetails = () => {
           </Button>
 
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            {embedUrl && (
+            {embedUrl ? (
               <div className="aspect-video w-full">
                 <iframe
                   src={embedUrl}
@@ -107,6 +107,10 @@ const TutorialDetails = () => {
                   allowFullScreen
                   className="w-full h-full"
                 />
+              </div>
+            ) : (
+              <div className="aspect-video w-full bg-sage-100 flex items-center justify-center">
+                <Video className="h-16 w-16 text-sage-400" />
               </div>
             )}
 

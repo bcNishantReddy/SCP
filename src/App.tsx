@@ -11,6 +11,7 @@ import Clubs from "@/pages/Clubs";
 import Portfolios from "@/pages/Portfolios";
 import Profile from "@/pages/Profile";
 import Tutorials from "@/pages/Tutorials";
+import TutorialDetails from "@/pages/TutorialDetails";
 import SignIn from "@/pages/auth/SignIn";
 import SignUp from "@/pages/auth/SignUp";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -147,6 +148,14 @@ const App = () => {
             element={
               <AuthGuard>
                 <Tutorials />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/tutorials/:id"
+            element={
+              <AuthGuard>
+                <TutorialDetails />
               </AuthGuard>
             }
           />
