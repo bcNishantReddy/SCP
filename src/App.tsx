@@ -1,47 +1,183 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { AuthGuard } from "@/components/auth/AuthGuard";
-import Home from "@/pages/Home";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import Dashboard from "@/pages/Dashboard";
-import Profile from "@/pages/Profile";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Events from "@/pages/Events";
+import { EventDetails } from "@/components/events/EventDetails";
+import LiveFeed from "@/pages/LiveFeed";
+import Projects from "@/pages/Projects";
+import ProjectDetails from "@/pages/ProjectDetails";
 import Opportunities from "@/pages/Opportunities";
-import { OpportunityDetails } from "@/components/opportunities/OpportunityDetails";
+import People from "@/pages/People";
+import Clubs from "@/pages/Clubs";
+import Portfolios from "@/pages/Portfolios";
+import Profile from "@/pages/Profile";
 import Tutorials from "@/pages/Tutorials";
-import TutorialDetails from "@/pages/TutorialDetails";
-import Resources from "@/pages/Resources";
-import Community from "@/pages/Community";
-import Settings from "@/pages/Settings";
-import NotFound from "@/pages/NotFound";
+import SignIn from "@/pages/auth/SignIn";
+import SignUp from "@/pages/auth/SignUp";
+import { AuthGuard } from "@/components/auth/AuthGuard";
+import { OpportunityDetails } from "@/components/opportunities/OpportunityDetails";
+import AdminDashboard from "@/pages/AdminDashboard";
 
-function App() {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const App = () => {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthGuard>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/opportunities" element={<Opportunities />} />
-            <Route path="/opportunities/:id" element={<OpportunityDetails />} />
-            <Route path="/tutorials" element={<Tutorials />} />
-            <Route path="/tutorials/:id" element={<TutorialDetails />} />
-            <Route path="/resources" element={<Resources />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthGuard>
-        <Toaster />
-      </QueryClientProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Routes>
+          {/* Auth routes */}
+          <Route path="/auth/signin" element={<SignIn />} />
+          <Route path="/auth/signup" element={<SignUp />} />
+
+          {/* Redirect root to feed if authenticated, otherwise to signin */}
+          <Route
+            path="/"
+            element={
+              <AuthGuard>
+                <Navigate to="/feed" replace />
+              </AuthGuard>
+            }
+          />
+
+          {/* Protected routes */}
+          <Route
+            path="/feed"
+            element={
+              <AuthGuard>
+                <LiveFeed />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <AuthGuard>
+                <Projects />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/projects/:id"
+            element={
+              <AuthGuard>
+                <ProjectDetails />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/projects/:id/edit"
+            element={
+              <AuthGuard>
+                <ProjectDetails />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/projects/:id/team"
+            element={
+              <AuthGuard>
+                <ProjectDetails />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/opportunities"
+            element={
+              <AuthGuard>
+                <Opportunities />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/opportunities/:id"
+            element={
+              <AuthGuard>
+                <OpportunityDetails />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/people"
+            element={
+              <AuthGuard>
+                <People />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/events"
+            element={
+              <AuthGuard>
+                <Events />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/events/:id"
+            element={
+              <AuthGuard>
+                <EventDetails />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/clubs"
+            element={
+              <AuthGuard>
+                <Clubs />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/portfolios"
+            element={
+              <AuthGuard>
+                <Portfolios />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <AuthGuard>
+                <Profile />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/profile/:id"
+            element={
+              <AuthGuard>
+                <Profile />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/tutorials"
+            element={
+              <AuthGuard>
+                <Tutorials />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AuthGuard>
+                <AdminDashboard />
+              </AuthGuard>
+            }
+          />
+        </Routes>
+      </Router>
+    </QueryClientProvider>
   );
-}
+};
 
 export default App;

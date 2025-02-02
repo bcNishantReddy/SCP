@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2, Calendar, Link as LinkIcon, ArrowLeft } from "lucide-react";
+import { Edit, Trash2, Calendar, Link as LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
@@ -109,17 +109,6 @@ export function OpportunityDetails() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          className="mb-4"
-          onClick={() => navigate("/opportunities")}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Opportunities
-        </Button>
-      </div>
-      
       <div className="flex justify-between items-start mb-6">
         {isEditing ? (
           <div className="w-full">
