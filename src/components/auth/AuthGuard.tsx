@@ -16,8 +16,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
+          console.log("No session found, redirecting to signin");
           navigate("/auth/signin");
         } else if (location.pathname === "/" || location.pathname === "/auth/signin") {
+          console.log("User is authenticated, redirecting to feed");
           navigate("/feed");
         }
       } catch (error) {
@@ -30,6 +32,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
         if (!session) {
           navigate("/auth/signin");
         } else if (location.pathname === "/" || location.pathname === "/auth/signin") {
@@ -43,7 +46,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, location]);
+  }, [navigate, location.pathname]);
 
   if (isLoading) {
     return <div>Loading...</div>;

@@ -34,12 +34,16 @@ export function PostCard({ post }: PostCardProps) {
   const [editedContent, setEditedContent] = useState(post.content);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isAuthor, setIsAuthor] = useState(false);
 
   // Check if current user is the author
-  const isAuthor = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id === post.user_id;
-  };
+  useEffect(() => {
+    const checkAuthor = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthor(user?.id === post.user_id);
+    };
+    checkAuthor();
+  }, [post.user_id]);
 
   // Check if post is within 5-minute edit window
   const checkEditWindow = async () => {
@@ -55,11 +59,15 @@ export function PostCard({ post }: PostCardProps) {
 
   const deletePost = useMutation({
     mutationFn: async () => {
-      const canEdit = await isAuthor();
-      if (!canEdit) {
-        throw new Error("You can only delete your own posts");
-      }
+      // Delete post likes first
+      const { error: likesError } = await supabase
+        .from('post_likes')
+        .delete()
+        .eq('post_id', post.id);
 
+      if (likesError) throw likesError;
+
+      // Then delete the post
       const { error } = await supabase
         .from('posts')
         .delete()
@@ -85,11 +93,6 @@ export function PostCard({ post }: PostCardProps) {
 
   const updatePost = useMutation({
     mutationFn: async () => {
-      const canEdit = await isAuthor();
-      if (!canEdit) {
-        throw new Error("You can only edit your own posts");
-      }
-
       const isEditable = await checkEditWindow();
       if (!isEditable) {
         throw new Error("Posts can only be edited within 5 minutes of creation");
@@ -191,7 +194,7 @@ export function PostCard({ post }: PostCardProps) {
             </p>
           </div>
         </div>
-        {post.user_id === (supabase.auth.getUser() as any).data?.user?.id && (
+        {isAuthor && (
           <div className="flex space-x-2">
             <Button
               variant="ghost"
