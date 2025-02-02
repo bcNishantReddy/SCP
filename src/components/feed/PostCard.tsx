@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { Heart, Trash, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import DOMPurify from "isomorphic-dompurify";
+import { formatDistanceToNow } from "date-fns";
 
 interface PostCardProps {
   post: {
@@ -13,6 +14,7 @@ interface PostCardProps {
     created_at: string;
     image_url: string | null;
     likes_count: number;
+    user_id: string;
     profile: {
       name: string;
       avatar_url: string | null;
@@ -28,8 +30,97 @@ interface ToggleLikeParams {
 
 export function PostCard({ post }: PostCardProps) {
   const [isLiking, setIsLiking] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(post.content);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Check if post is within 5-minute edit window
+  const isEditable = async () => {
+    const { data, error } = await supabase
+      .rpc('is_post_editable', { post_created_at: post.created_at });
+    
+    if (error) {
+      console.error('Error checking edit window:', error);
+      return false;
+    }
+    return data;
+  };
+
+  const deletePost = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      if (user.id !== post.user_id) {
+        throw new Error("You can only delete your own posts");
+      }
+
+      const canEdit = await isEditable();
+      if (!canEdit) {
+        throw new Error("Post can only be edited within 5 minutes of creation");
+      }
+
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', post.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePost = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      if (user.id !== post.user_id) {
+        throw new Error("You can only edit your own posts");
+      }
+
+      const canEdit = await isEditable();
+      if (!canEdit) {
+        throw new Error("Post can only be edited within 5 minutes of creation");
+      }
+
+      const { error } = await supabase
+        .from('posts')
+        .update({ content: editedContent })
+        .eq('id', post.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast({
+        title: "Success",
+        description: "Post updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const toggleLike = useMutation({
     mutationFn: async ({ postId, hasLiked }: ToggleLikeParams) => {
@@ -95,29 +186,78 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 space-y-4">
-      <div className="flex items-center space-x-3">
-        <div className="h-10 w-10 rounded-full bg-sage-200 overflow-hidden">
-          {post.profile.avatar_url && (
-            <img 
-              src={post.profile.avatar_url} 
-              alt={post.profile.name}
-              className="w-full h-full object-cover"
-            />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="h-10 w-10 rounded-full bg-sage-200 overflow-hidden">
+            {post.profile.avatar_url && (
+              <img 
+                src={post.profile.avatar_url} 
+                alt={post.profile.name}
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+          <div>
+            <h3 className="font-semibold">{post.profile.name}</h3>
+            <p className="text-sm text-sage-600">
+              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+            </p>
+          </div>
+        </div>
+        <div className="flex space-x-2">
+          {post.user_id === (supabase.auth.getUser() as any).data?.user?.id && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => deletePost.mutate()}
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </>
           )}
         </div>
-        <div>
-          <h3 className="font-semibold">{post.profile.name}</h3>
-          <p className="text-sm text-sage-600">
-            {new Date(post.created_at).toLocaleDateString()}
-          </p>
-        </div>
       </div>
-      <div 
-        className="text-gray-700 whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ 
-          __html: DOMPurify.sanitize(post.content) 
-        }}
-      />
+      
+      {isEditing ? (
+        <div className="space-y-2">
+          <textarea
+            value={editedContent}
+            onChange={(e) => setEditedContent(e.target.value)}
+            className="w-full p-2 border rounded-md"
+          />
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => updatePost.mutate()}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div 
+          className="text-gray-700 whitespace-pre-wrap"
+          dangerouslySetInnerHTML={{ 
+            __html: DOMPurify.sanitize(post.content) 
+          }}
+        />
+      )}
+      
       {post.image_url && (
         <img 
           src={post.image_url} 

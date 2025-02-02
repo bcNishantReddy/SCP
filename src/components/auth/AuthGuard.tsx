@@ -18,7 +18,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         if (!session) {
           navigate("/auth/signin");
         } else if (location.pathname === "/") {
-          navigate("/");
+          navigate("/feed");
         }
       } catch (error) {
         console.error("Auth error:", error);

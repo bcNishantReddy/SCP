@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Events from "@/pages/Events";
 import { EventDetails } from "@/components/events/EventDetails";
@@ -27,9 +27,12 @@ const App = () => {
           <Route path="/auth/signin" element={<SignIn />} />
           <Route path="/auth/signup" element={<SignUp />} />
 
+          {/* Redirect root to signin */}
+          <Route path="/" element={<Navigate to="/auth/signin" replace />} />
+
           {/* Protected routes */}
           <Route
-            path="/"
+            path="/feed"
             element={
               <AuthGuard>
                 <LiveFeed />
