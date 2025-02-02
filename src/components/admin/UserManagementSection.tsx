@@ -21,6 +21,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
 
@@ -29,21 +40,45 @@ export const UserManagementSection = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: users } = useQuery({
+  const { data: users, isLoading } = useQuery({
     queryKey: ["users", searchTerm],
     queryFn: async () => {
+      console.log("Fetching users with search term:", searchTerm);
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .ilike("name", `%${searchTerm}%`);
+        .ilike("name", `%${searchTerm}%`)
+        .eq("is_approved", true); // Only show approved users
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+      }
+      console.log("Fetched users:", data);
       return data;
     },
   });
 
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
+      console.log("Updating user role:", { userId, role });
+      
+      // Get the current user's auth ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      // Verify admin status
+      const { data: adminProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .eq("role", "admin")
+        .single();
+
+      if (profileError || !adminProfile) {
+        throw new Error("Unauthorized: User is not an admin");
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({ role })
@@ -52,15 +87,19 @@ export const UserManagementSection = () => {
       if (error) throw error;
 
       // Log admin action
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("admin_actions").insert({
-          admin_id: user.id,
+      const { error: logError } = await supabase
+        .from("admin_actions")
+        .insert({
+          admin_id: adminProfile.id,
           action_type: "update_role",
           target_table: "profiles",
           target_id: userId,
           details: { new_role: role }
         });
+
+      if (logError) {
+        console.error("Error logging admin action:", logError);
+        throw logError;
       }
     },
     onSuccess: () => {
@@ -71,6 +110,7 @@ export const UserManagementSection = () => {
       });
     },
     onError: (error: any) => {
+      console.error("Error in updateUserRole mutation:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -78,6 +118,70 @@ export const UserManagementSection = () => {
       });
     },
   });
+
+  const deleteUser = useMutation({
+    mutationFn: async (userId: string) => {
+      console.log("Deleting user:", userId);
+      
+      // Get the current user's auth ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      // Verify admin status
+      const { data: adminProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .eq("role", "admin")
+        .single();
+
+      if (profileError || !adminProfile) {
+        throw new Error("Unauthorized: User is not an admin");
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      // Log admin action
+      const { error: logError } = await supabase
+        .from("admin_actions")
+        .insert({
+          admin_id: adminProfile.id,
+          action_type: "delete_user",
+          target_table: "profiles",
+          target_id: userId,
+          details: { action: "deleted_user" }
+        });
+
+      if (logError) {
+        console.error("Error logging admin action:", logError);
+        throw logError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Error in deleteUser mutation:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (isLoading) {
+    return <div>Loading users...</div>;
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -107,35 +211,71 @@ export const UserManagementSection = () => {
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Select
-                      value={user.role}
-                      onValueChange={(value: UserRole) =>
-                        updateUserRole.mutate({
-                          userId: user.id,
-                          role: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="faculty">Faculty</SelectItem>
-                        <SelectItem value="investor">Investor</SelectItem>
-                        <SelectItem value="alumni">Alumni</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Select
+                          value={user.role}
+                          onValueChange={(value: UserRole) => {}}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="student">Student</SelectItem>
+                            <SelectItem value="faculty">Faculty</SelectItem>
+                            <SelectItem value="investor">Investor</SelectItem>
+                            <SelectItem value="alumni">Alumni</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Change User Role</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to change {user.name}'s role? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => updateUserRole.mutate({ userId: user.id, role: user.role })}
+                          >
+                            Change Role
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete User</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete {user.name}? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteUser.mutate(user.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}

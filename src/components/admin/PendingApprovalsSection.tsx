@@ -3,20 +3,36 @@ import { AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const PendingApprovalsSection = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: pendingUsers } = useQuery({
+  const { data: pendingUsers, isLoading } = useQuery({
     queryKey: ["pendingUsers"],
     queryFn: async () => {
+      console.log("Fetching pending users");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("is_approved", false);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching pending users:", error);
+        throw error;
+      }
+      console.log("Pending users:", data);
       return data;
     },
   });
@@ -52,9 +68,12 @@ export const PendingApprovalsSection = () => {
         .update({ is_approved: true })
         .eq("id", userId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating user approval:", updateError);
+        throw updateError;
+      }
 
-      console.log("Logging admin action with admin profile:", adminProfile);
+      console.log("Successfully updated user approval");
       
       // Log the admin action
       const { error: logError } = await supabase
@@ -71,6 +90,8 @@ export const PendingApprovalsSection = () => {
         console.error("Error logging admin action:", logError);
         throw logError;
       }
+
+      console.log("Successfully logged admin action");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingUsers"] });
@@ -88,6 +109,10 @@ export const PendingApprovalsSection = () => {
       });
     },
   });
+
+  if (isLoading) {
+    return <div>Loading pending approvals...</div>;
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -107,14 +132,33 @@ export const PendingApprovalsSection = () => {
               <p className="text-sm text-sage-500 capitalize">{user.role}</p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="text-green-600"
-                onClick={() => approveUser.mutate(user.id)}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Approve
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="text-green-600"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Approve User</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to approve {user.name}? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => approveUser.mutate(user.id)}
+                    >
+                      Approve
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         ))}
