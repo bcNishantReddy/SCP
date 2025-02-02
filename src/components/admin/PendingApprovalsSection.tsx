@@ -33,16 +33,11 @@ export const PendingApprovalsSection = () => {
 
       if (updateError) throw updateError;
 
-      // Get the admin's profile and verify role
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-
-      console.log("Getting admin profile for user:", user.id);
-      
+      // Get the admin's profile ID from the profiles table
       const { data: adminProfile, error: profileError } = await supabase
         .from("profiles")
         .select("id, role")
-        .eq("id", user.id)
+        .eq("role", "admin")
         .single();
 
       if (profileError) {
@@ -60,6 +55,7 @@ export const PendingApprovalsSection = () => {
 
       console.log("Logging admin action with admin profile:", adminProfile.id);
       
+      // Use the admin's profile ID for the admin_actions record
       const { error: logError } = await supabase
         .from("admin_actions")
         .insert({
