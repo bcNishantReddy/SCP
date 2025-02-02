@@ -27,6 +27,7 @@ const ClubDetails = () => {
   const [editedName, setEditedName] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [isPublic, setIsPublic] = useState(true);
 
   const { data: clubData } = useQuery({
     queryKey: ['club', id],
@@ -164,6 +165,7 @@ const ClubDetails = () => {
     if (clubData) {
       setEditedName(clubData.name);
       setEditedDescription(clubData.description);
+      setIsPublic(!clubData.is_private);
     }
   }, [clubData]);
 
