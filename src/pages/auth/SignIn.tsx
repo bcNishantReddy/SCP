@@ -29,6 +29,11 @@ export default function SignIn() {
 
       if (error) {
         console.error("Sign in error:", error);
+        
+        // Handle specific error cases
+        if (error.message.includes("Database error querying schema")) {
+          throw new Error("There was an issue with the database. Please try again later or contact support.");
+        }
         throw error;
       }
 
@@ -44,10 +49,14 @@ export default function SignIn() {
         .single();
 
       if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        if (profileError.message?.includes("Results contain 0 rows")) {
+          throw new Error("User profile not found. Please contact support.");
+        }
         throw profileError;
       }
 
-      if (!profile.is_approved) {
+      if (!profile?.is_approved) {
         // Sign out the user if not approved
         await supabase.auth.signOut();
         navigate("/auth/pending");
@@ -68,6 +77,8 @@ export default function SignIn() {
         errorMessage = "Invalid email or password.";
       } else if (error.message.includes("Email not confirmed")) {
         errorMessage = "Please verify your email address before signing in.";
+      } else if (error.message.includes("Database error")) {
+        errorMessage = "There was an issue connecting to the database. Please try again later.";
       }
       
       toast({
