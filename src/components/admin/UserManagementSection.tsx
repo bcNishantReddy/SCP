@@ -37,6 +37,7 @@ type UserRole = Database["public"]["Enums"]["user_role"];
 
 export const UserManagementSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRole, setSelectedRole] = useState<{ [key: string]: UserRole }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -47,8 +48,7 @@ export const UserManagementSection = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .ilike("name", `%${searchTerm}%`)
-        .eq("is_approved", true);
+        .ilike("name", `%${searchTerm}%`);
 
       if (error) {
         console.error("Error fetching users:", error);
@@ -99,8 +99,6 @@ export const UserManagementSection = () => {
 
       if (logError) {
         console.error("Error logging admin action:", logError);
-        // Don't throw here - the main action succeeded
-        console.warn("Failed to log admin action but role was updated");
       }
     },
     onSuccess: () => {
@@ -160,8 +158,6 @@ export const UserManagementSection = () => {
 
       if (logError) {
         console.error("Error logging admin action:", logError);
-        // Don't throw here - the main action succeeded
-        console.warn("Failed to log admin action but user was deleted");
       }
     },
     onSuccess: () => {
@@ -215,7 +211,13 @@ export const UserManagementSection = () => {
                   <TableCell>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Select defaultValue={user.role}>
+                        <Select
+                          value={selectedRole[user.id] || user.role}
+                          onValueChange={(value) => setSelectedRole({ 
+                            ...selectedRole, 
+                            [user.id]: value as UserRole 
+                          })}
+                        >
                           <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
@@ -232,13 +234,25 @@ export const UserManagementSection = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Change User Role</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to change {user.name}'s role? This action cannot be undone.
+                            Are you sure you want to change {user.name}'s role to {selectedRole[user.id]}? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel onClick={() => {
+                            setSelectedRole({
+                              ...selectedRole,
+                              [user.id]: user.role
+                            });
+                          }}>Cancel</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => updateUserRole.mutate({ userId: user.id, role: user.role })}
+                            onClick={() => {
+                              if (selectedRole[user.id]) {
+                                updateUserRole.mutate({
+                                  userId: user.id,
+                                  role: selectedRole[user.id]
+                                });
+                              }
+                            }}
                           >
                             Change Role
                           </AlertDialogAction>
