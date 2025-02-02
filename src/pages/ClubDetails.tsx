@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Plus, Users, MessageSquare, Image } from "lucide-react";
+import { ArrowLeft, Send, Plus, Users, MessageSquare, Lock, LockOpen } from "lucide-react";
 import { CreatePost } from "@/components/feed/CreatePost";
 
 const ClubDetails = () => {
@@ -53,7 +53,7 @@ const ClubDetails = () => {
 
       if (error) throw error;
 
-      // Fetch user's memberships - using maybeSingle() instead of single()
+      // Fetch user's membership status
       const { data: membership, error: membershipError } = await supabase
         .from('group_members')
         .select('user_id')
@@ -61,7 +61,6 @@ const ClubDetails = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Handle the case where user is not a member
       const isMember = !membershipError && membership !== null;
       const isCreator = club.creator_id === user.id;
       setIsPublic(!club.is_private);
@@ -79,44 +78,6 @@ const ClubDetails = () => {
     },
   });
 
-  useEffect(() => {
-    if (!id) return;
-
-    const channel = supabase
-      .channel('group-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `group_id=eq.${id}`,
-        },
-        (payload) => {
-          console.log('New message:', payload);
-          queryClient.invalidateQueries({ queryKey: ['messages', selectedDiscussion] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts',
-          filter: `group_id=eq.${id}`,
-        },
-        (payload) => {
-          console.log('New post:', payload);
-          queryClient.invalidateQueries({ queryKey: ['club', id] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [id, queryClient, selectedDiscussion]);
-
   // Toggle group privacy
   const togglePrivacy = useMutation({
     mutationFn: async () => {
@@ -131,27 +92,38 @@ const ClubDetails = () => {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: `Group is now ${isPublic ? 'private' : 'public'}`,
+        description: `Club is now ${isPublic ? 'private' : 'public'}`,
       });
       queryClient.invalidateQueries({ queryKey: ['club', id] });
     },
   });
 
-  // Handle join requests
-  const handleJoinRequest = useMutation({
-    mutationFn: async (userId: string) => {
+  // Handle joining the group
+  const joinGroup = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       const { error } = await supabase
         .from('group_members')
-        .insert([{ group_id: id, user_id: userId }]);
+        .insert([{ group_id: id, user_id: user.id }]);
 
       if (error) throw error;
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Member added to the group",
+        description: "You have joined the club",
       });
       queryClient.invalidateQueries({ queryKey: ['club', id] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to join the club",
+        variant: "destructive",
+      });
+      console.error("Join error:", error);
     },
   });
 
@@ -174,14 +146,36 @@ const ClubDetails = () => {
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-2xl font-bold text-sage-800">{clubData.name}</h1>
-              {clubData.isCreator && (
-                <Button
-                  onClick={() => togglePrivacy.mutate()}
-                  variant="outline"
-                >
-                  {isPublic ? 'Make Private' : 'Make Public'}
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {!clubData.isMember && !clubData.isCreator && (
+                  <Button
+                    onClick={() => joinGroup.mutate()}
+                    className="bg-sage-600 hover:bg-sage-700"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Join Club
+                  </Button>
+                )}
+                {clubData.isCreator && (
+                  <Button
+                    onClick={() => togglePrivacy.mutate()}
+                    variant="outline"
+                    className="flex items-center"
+                  >
+                    {isPublic ? (
+                      <>
+                        <LockOpen className="h-4 w-4 mr-2" />
+                        Make Private
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4 mr-2" />
+                        Make Public
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
             <p className="text-sage-600 mb-4">{clubData.description}</p>
             
