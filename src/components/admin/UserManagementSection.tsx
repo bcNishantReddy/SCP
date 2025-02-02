@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, XCircle } from "lucide-react";
+import { Users, XCircle, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ type UserRole = Database["public"]["Enums"]["user_role"];
 export const UserManagementSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState<{ [key: string]: UserRole }>({});
+  const [pendingChanges, setPendingChanges] = useState<{ [key: string]: boolean }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -61,9 +62,9 @@ export const UserManagementSection = () => {
 
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
-      console.log("Updating user role:", { userId, role });
+      console.log("Starting role update process for user:", userId);
       
-      // First get the current session
+      // Get the current session
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -75,7 +76,7 @@ export const UserManagementSection = () => {
         throw new Error("No active session");
       }
 
-      // Verify admin status using the session user's id
+      // Verify admin status
       const { data: adminProfile, error: profileError } = await supabase
         .from("profiles")
         .select("id, role")
@@ -94,7 +95,7 @@ export const UserManagementSection = () => {
       // Update the user's role
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ role: role || "student" }) // Set default role to student if none provided
+        .update({ role: role || "student" })
         .eq("id", userId);
 
       if (updateError) {
@@ -116,6 +117,9 @@ export const UserManagementSection = () => {
       if (logError) {
         console.error("Error logging admin action:", logError);
       }
+
+      // Clear the pending change for this user
+      setPendingChanges(prev => ({ ...prev, [userId]: false }));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -138,15 +142,17 @@ export const UserManagementSection = () => {
     mutationFn: async (userId: string) => {
       console.log("Deleting user:", userId);
       
-      // Get the current user's auth ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        throw new Error("No authenticated session");
+      }
 
       // Verify admin status
       const { data: adminProfile, error: profileError } = await supabase
         .from("profiles")
         .select("id")
-        .eq("id", user.id)
+        .eq("id", sessionData.session.user.id)
         .eq("role", "admin")
         .maybeSingle();
 
@@ -193,6 +199,20 @@ export const UserManagementSection = () => {
     },
   });
 
+  const handleRoleChange = (userId: string, role: UserRole) => {
+    setSelectedRole(prev => ({ ...prev, [userId]: role }));
+    setPendingChanges(prev => ({ ...prev, [userId]: true }));
+  };
+
+  const handleSaveRole = (userId: string) => {
+    if (selectedRole[userId]) {
+      updateUserRole.mutate({
+        userId,
+        role: selectedRole[userId]
+      });
+    }
+  };
+
   if (isLoading) {
     return <div>Loading users...</div>;
   }
@@ -224,59 +244,32 @@ export const UserManagementSection = () => {
                 <TableRow key={user.id}>
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Select
-                          value={selectedRole[user.id] || user.role}
-                          onValueChange={(value: UserRole) => {
-                            setSelectedRole({ 
-                              ...selectedRole, 
-                              [user.id]: value 
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="student">Student</SelectItem>
-                            <SelectItem value="faculty">Faculty</SelectItem>
-                            <SelectItem value="investor">Investor</SelectItem>
-                            <SelectItem value="alumni">Alumni</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Change User Role</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to change {user.name}'s role to {selectedRole[user.id]}? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => {
-                            setSelectedRole({
-                              ...selectedRole,
-                              [user.id]: user.role
-                            });
-                          }}>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => {
-                              if (selectedRole[user.id]) {
-                                updateUserRole.mutate({
-                                  userId: user.id,
-                                  role: selectedRole[user.id]
-                                });
-                              }
-                            }}
-                          >
-                            Change Role
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  <TableCell className="flex items-center gap-2">
+                    <Select
+                      value={selectedRole[user.id] || user.role}
+                      onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Student</SelectItem>
+                        <SelectItem value="faculty">Faculty</SelectItem>
+                        <SelectItem value="investor">Investor</SelectItem>
+                        <SelectItem value="alumni">Alumni</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {pendingChanges[user.id] && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSaveRole(user.id)}
+                        className="ml-2"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                   <TableCell>
                     <AlertDialog>
