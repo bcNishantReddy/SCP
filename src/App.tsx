@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthGuard } from "@/components/AuthGuard";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
