@@ -7,7 +7,7 @@ import Projects from "@/pages/Projects";
 import ProjectDetails from "@/pages/ProjectDetails";
 import Opportunities from "@/pages/Opportunities";
 import People from "@/pages/People";
-import Groups from "@/pages/Groups";
+import Clubs from "@/pages/Clubs";
 import Portfolios from "@/pages/Portfolios";
 import Profile from "@/pages/Profile";
 import Tutorials from "@/pages/Tutorials";
@@ -127,10 +127,10 @@ const App = () => {
             }
           />
           <Route
-            path="/groups"
+            path="/clubs"
             element={
               <AuthGuard>
-                <Groups />
+                <Clubs />
               </AuthGuard>
             }
           />

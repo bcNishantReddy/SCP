@@ -82,7 +82,7 @@ const Navbar = () => {
               <NavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
               <NavLink to="/people" icon={<Users size={18} />} label="People" />
               <NavLink to="/events" icon={<Calendar size={18} />} label="Events" />
-              <NavLink to="/groups" icon={<Users size={18} />} label="Groups" />
+              <NavLink to="/clubs" icon={<Users size={18} />} label="Clubs" />
               <NavLink to="/portfolios" icon={<FileText size={18} />} label="Portfolios" />
               <NavLink to="/tutorials" icon={<BookOpen size={18} />} label="Tutorials" />
               {isAdmin && (
@@ -119,7 +119,7 @@ const Navbar = () => {
                   <MobileNavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
                   <MobileNavLink to="/people" icon={<Users size={18} />} label="People" />
                   <MobileNavLink to="/events" icon={<Calendar size={18} />} label="Events" />
-                  <MobileNavLink to="/groups" icon={<Users size={18} />} label="Groups" />
+                  <MobileNavLink to="/clubs" icon={<Users size={18} />} label="Clubs" />
                   <MobileNavLink to="/portfolios" icon={<FileText size={18} />} label="Portfolios" />
                   <MobileNavLink to="/tutorials" icon={<BookOpen size={18} />} label="Tutorials" />
                   {isAdmin && (
