@@ -19,16 +19,18 @@ export const AuditLogSection = () => {
         .from("admin_actions")
         .select(`
           *,
-          admin:profiles(
+          admin:profiles!inner(
             email,
             name
           )
         `)
-        .eq('admin:profiles.id', 'admin_id')
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching audit logs:", error);
+        throw error;
+      }
       return data;
     },
   });
