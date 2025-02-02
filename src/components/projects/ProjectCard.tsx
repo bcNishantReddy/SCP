@@ -58,7 +58,6 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
         title: "Success",
         description: "Project deleted successfully",
       });
-      // Call the onDelete callback if provided
       onDelete?.();
     },
     onError: (error: Error) => {
@@ -117,11 +116,9 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
     request => request.user_id === currentUserId
   );
 
-  // Calculate member count (including owner)
   const approvedMembers = joinRequests?.filter(request => request.status === 'approved').length || 0;
-  const memberCount = approvedMembers + 1; // +1 for the owner
+  const memberCount = approvedMembers + 1;
 
-  // Truncate title and description with even shorter limits
   const truncatedTitle = project.title.length > 25 
     ? project.title.substring(0, 25) + '...'
     : project.title;
@@ -144,7 +141,7 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-xl">{truncatedTitle}</CardTitle>
+            <CardTitle className="text-xl line-clamp-1">{truncatedTitle}</CardTitle>
             <Badge variant="secondary" className="mt-2">
               {project.category}
             </Badge>
@@ -172,23 +169,23 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
         </div>
       </CardHeader>
       <CardContent>
-        <CardDescription className="text-sm">
+        <CardDescription className="text-sm line-clamp-2">
           {truncatedDescription}
         </CardDescription>
       </CardContent>
-      <CardFooter className="flex justify-between">
+      <CardFooter className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4" />
           <span className="text-sm text-muted-foreground">
             {memberCount} member{memberCount !== 1 ? 's' : ''}
           </span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button 
             variant="outline" 
             size="sm"
             onClick={handleViewDetails}
-            className="hover:bg-secondary"
+            className="w-full sm:w-auto"
           >
             <Eye className="h-4 w-4 mr-2" />
             View Details
@@ -197,14 +194,14 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
             <Button 
               onClick={handleJoinRequest} 
               size="sm"
-              className="bg-emerald-500 hover:bg-emerald-600"
+              className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600"
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Request to Join
             </Button>
           )}
           {!isOwner && userJoinRequest?.status === 'pending' && (
-            <Badge variant="secondary" className="px-4 py-2">
+            <Badge variant="secondary" className="px-4 py-2 w-full sm:w-auto text-center">
               Request Pending
             </Badge>
           )}
