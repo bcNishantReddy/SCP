@@ -33,7 +33,7 @@ const Navbar = () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      navigate("/auth/signin");
+      navigate("/auth/signin", { replace: true });
       toast({
         title: "Success",
         description: "Logged out successfully",
@@ -52,11 +52,11 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
-            <Link to="/" className="text-xl font-bold text-sage-700">
+            <Link to="/feed" className="text-xl font-bold text-sage-700">
               Bossy
             </Link>
             <div className="hidden md:flex space-x-4">
-              <NavLink to="/" icon={<Home size={18} />} label="Feed" />
+              <NavLink to="/feed" icon={<Home size={18} />} label="Feed" />
               <NavLink to="/projects" icon={<Briefcase size={18} />} label="Projects" />
               <NavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
               <NavLink to="/people" icon={<Users size={18} />} label="People" />
@@ -90,7 +90,7 @@ const Navbar = () => {
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col space-y-4 mt-6">
-                  <MobileNavLink to="/" icon={<Home size={18} />} label="Feed" />
+                  <MobileNavLink to="/feed" icon={<Home size={18} />} label="Feed" />
                   <MobileNavLink to="/projects" icon={<Briefcase size={18} />} label="Projects" />
                   <MobileNavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
                   <MobileNavLink to="/people" icon={<Users size={18} />} label="People" />

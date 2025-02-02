@@ -19,17 +19,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
           // Only redirect to signin if not already there
           if (!location.pathname.includes('/auth/')) {
             console.log("No session found, redirecting to signin");
-            navigate("/auth/signin");
+            navigate("/auth/signin", { replace: true });
           }
-        } else if (location.pathname.includes('/auth/')) {
-          // If authenticated and trying to access auth pages, redirect to feed
-          console.log("User is authenticated, redirecting to feed");
-          navigate("/feed");
         }
       } catch (error) {
         console.error("Auth error:", error);
         if (!location.pathname.includes('/auth/')) {
-          navigate("/auth/signin");
+          navigate("/auth/signin", { replace: true });
         }
       } finally {
         setIsLoading(false);
@@ -40,9 +36,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         if (!session && !location.pathname.includes('/auth/')) {
-          navigate("/auth/signin");
-        } else if (session && location.pathname.includes('/auth/')) {
-          navigate("/feed");
+          navigate("/auth/signin", { replace: true });
         }
       }
     );

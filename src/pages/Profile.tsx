@@ -88,7 +88,10 @@ const Profile = () => {
       <Navbar />
       <main className="pt-16">
         {/* Cover Image */}
-        <div className="h-32 md:h-64 bg-sage-200 transition-all duration-300" />
+        <div 
+          className="h-32 md:h-64 bg-sage-200 transition-all duration-300 bg-cover bg-center"
+          style={profile?.banner_url ? { backgroundImage: `url(${profile.banner_url})` } : {}}
+        />
 
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">

@@ -27,8 +27,15 @@ const App = () => {
           <Route path="/auth/signin" element={<SignIn />} />
           <Route path="/auth/signup" element={<SignUp />} />
 
-          {/* Redirect root to signin */}
-          <Route path="/" element={<Navigate to="/auth/signin" replace />} />
+          {/* Redirect root to feed if authenticated, otherwise to signin */}
+          <Route
+            path="/"
+            element={
+              <AuthGuard>
+                <Navigate to="/feed" replace />
+              </AuthGuard>
+            }
+          />
 
           {/* Protected routes */}
           <Route

@@ -1,13 +1,18 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit, Trash } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['events', id],
@@ -26,6 +31,31 @@ export function EventDetails() {
     },
   });
 
+  const deleteEvent = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+      navigate('/events');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -34,19 +64,40 @@ export function EventDetails() {
     return <div>Event not found</div>;
   }
 
+  const isOwner = user?.id === event.user_id;
+
   return (
     <div className="min-h-screen bg-sage-50">
       <Navbar />
       <main className="container mx-auto px-4 pt-20">
         <div className="max-w-4xl mx-auto">
-          <Button
-            variant="ghost"
-            className="mb-4"
-            onClick={() => navigate('/events')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Events
-          </Button>
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/events')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Events
+            </Button>
+            {isOwner && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {/* Add edit functionality */}}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Event
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteEvent.mutate()}
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete Event
+                </Button>
+              </div>
+            )}
+          </div>
 
           {event.banner_url && (
             <div className="w-full h-64 mb-6 rounded-lg overflow-hidden">
