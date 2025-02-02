@@ -15,11 +15,21 @@ export default function SignIn() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      // Validate email format
+      if (!validateEmail(email)) {
+        throw new Error("Please enter a valid email address");
+      }
+
       console.log("Attempting sign in with:", { email: email.trim() });
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -44,10 +54,11 @@ export default function SignIn() {
         .single();
 
       if (profileError) {
+        console.error("Profile fetch error:", profileError);
         throw profileError;
       }
 
-      if (!profile.is_approved) {
+      if (!profile?.is_approved) {
         // Sign out the user if not approved
         await supabase.auth.signOut();
         navigate("/auth/pending");
@@ -65,9 +76,11 @@ export default function SignIn() {
       let errorMessage = "An error occurred during sign in.";
       
       if (error.message.includes("Invalid login credentials")) {
-        errorMessage = "Invalid email or password.";
+        errorMessage = "Invalid email or password. Please check your credentials and try again.";
       } else if (error.message.includes("Email not confirmed")) {
         errorMessage = "Please verify your email address before signing in.";
+      } else if (error.message.includes("valid email")) {
+        errorMessage = error.message;
       }
       
       toast({
