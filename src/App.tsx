@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { AuthGuard } from "@/components/AuthGuard";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Home from "@/pages/Home";
 import Groups from "@/pages/Groups";
 import Clubs from "@/pages/Clubs";
