@@ -5,42 +5,83 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const TutorialDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedContent, setEditedContent] = useState("");
+  const [editedCategory, setEditedCategory] = useState("");
+  const [editedVideoUrl, setEditedVideoUrl] = useState("");
 
   const { data: tutorial, isLoading } = useQuery({
     queryKey: ["tutorial", id],
     queryFn: async () => {
-      console.log("Fetching tutorial details...");
       const { data, error } = await supabase
         .from("tutorials")
         .select("*, profiles(name)")
         .eq("id", id)
         .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching tutorial:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load tutorial details",
-          variant: "destructive",
-        });
-        throw error;
-      }
-
-      console.log("Fetched tutorial:", data);
+      if (error) throw error;
       return data;
     },
   });
 
-  const getYouTubeEmbedUrl = (url: string) => {
-    if (!url) return null;
-    const videoId = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
-    return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : null;
-  };
+  const { data: currentUser } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      return profile;
+    },
+  });
+
+  const isAdmin = currentUser?.role === "admin";
+
+  const updateTutorial = useMutation({
+    mutationFn: async (data: {
+      title: string;
+      content: string;
+      category?: string;
+      video_url?: string;
+    }) => {
+      const { error } = await supabase
+        .from("tutorials")
+        .update(data)
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Tutorial updated successfully",
+      });
+      setIsEditing(false);
+    },
+  });
+
+  useEffect(() => {
+    if (tutorial) {
+      setEditedTitle(tutorial.title);
+      setEditedContent(tutorial.content);
+      setEditedCategory(tutorial.category || "");
+      setEditedVideoUrl(tutorial.video_url || "");
+    }
+  }, [tutorial]);
 
   if (isLoading) {
     return (
@@ -81,8 +122,6 @@ const TutorialDetails = () => {
     );
   }
 
-  const embedUrl = tutorial.video_url ? getYouTubeEmbedUrl(tutorial.video_url) : null;
-
   return (
     <div className="min-h-screen bg-sage-50">
       <Navbar />
@@ -98,42 +137,83 @@ const TutorialDetails = () => {
           </Button>
 
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            {embedUrl ? (
-              <div className="aspect-video w-full">
-                <iframe
-                  src={embedUrl}
-                  title={tutorial.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                />
-              </div>
-            ) : (
-              <div className="aspect-video w-full bg-sage-100 flex items-center justify-center">
-                <Video className="h-16 w-16 text-sage-400" />
-              </div>
-            )}
-
-            <div className="p-6 space-y-6">
-              <div className="space-y-4">
-                <h1 className="text-3xl font-bold text-sage-800">{tutorial.title}</h1>
-                
-                {tutorial.profiles?.name && (
-                  <p className="text-sage-600">
-                    Created by {tutorial.profiles.name}
-                  </p>
-                )}
-
-                {tutorial.category && (
-                  <div className="inline-block bg-sage-100 text-sage-800 px-3 py-1 rounded-full text-sm">
-                    {tutorial.category}
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                {isEditing ? (
+                  <div className="space-y-4 w-full">
+                    <Input
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      placeholder="Tutorial title"
+                    />
+                    <Input
+                      value={editedCategory}
+                      onChange={(e) => setEditedCategory(e.target.value)}
+                      placeholder="Category"
+                    />
+                    <Input
+                      value={editedVideoUrl}
+                      onChange={(e) => setEditedVideoUrl(e.target.value)}
+                      placeholder="Video URL"
+                      type="url"
+                    />
+                    <Textarea
+                      value={editedContent}
+                      onChange={(e) => setEditedContent(e.target.value)}
+                      placeholder="Tutorial content"
+                      className="min-h-[200px]"
+                    />
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => updateTutorial.mutate({
+                          title: editedTitle,
+                          content: editedContent,
+                          category: editedCategory,
+                          video_url: editedVideoUrl,
+                        })}
+                      >
+                        Save Changes
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <h1 className="text-3xl font-bold text-sage-800">{tutorial.title}</h1>
+                    {isAdmin && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Tutorial
+                      </Button>
+                    )}
+                  </>
                 )}
-
-                <div className="prose max-w-none">
-                  <p className="text-sage-600 whitespace-pre-wrap">{tutorial.content}</p>
-                </div>
               </div>
+
+              {!isEditing && (
+                <div className="space-y-6">
+                  {tutorial.profiles?.name && (
+                    <p className="text-sage-600">
+                      Created by {tutorial.profiles.name}
+                    </p>
+                  )}
+
+                  {tutorial.category && (
+                    <div className="inline-block bg-sage-100 text-sage-800 px-3 py-1 rounded-full text-sm">
+                      {tutorial.category}
+                    </div>
+                  )}
+
+                  <div className="prose max-w-none">
+                    <p className="text-sage-600 whitespace-pre-wrap">{tutorial.content}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

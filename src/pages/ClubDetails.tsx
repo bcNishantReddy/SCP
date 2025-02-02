@@ -7,20 +7,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Plus, Users, MessageSquare, Lock, LockOpen } from "lucide-react";
+import { ArrowLeft, Send, Plus, Users, MessageSquare, Lock, LockOpen, Edit, Upload, Trash } from "lucide-react";
 import { CreatePost } from "@/components/feed/CreatePost";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const ClubDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [newDiscussion, setNewDiscussion] = useState({ title: "", description: "" });
   const [newMessage, setNewMessage] = useState("");
-  const [selectedDiscussion, setSelectedDiscussion] = useState<string | null>(null);
-  const [isPublic, setIsPublic] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [editedDescription, setEditedDescription] = useState("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
 
-  // Fetch club details, discussions, and messages
   const { data: clubData } = useQuery({
     queryKey: ['club', id],
     queryFn: async () => {
@@ -78,54 +85,87 @@ const ClubDetails = () => {
     },
   });
 
-  // Toggle group privacy
-  const togglePrivacy = useMutation({
-    mutationFn: async () => {
+  const updateGroup = useMutation({
+    mutationFn: async ({ name, description, bannerUrl }: { name: string; description: string; bannerUrl?: string }) => {
       const { error } = await supabase
         .from('groups')
-        .update({ is_private: !isPublic })
+        .update({ 
+          name,
+          description,
+          ...(bannerUrl && { banner_url: bannerUrl })
+        })
         .eq('id', id);
 
       if (error) throw error;
-      setIsPublic(!isPublic);
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: `Club is now ${isPublic ? 'private' : 'public'}`,
+        description: "Club updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ['club', id] });
+      setIsEditing(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
-  // Handle joining the group
-  const joinGroup = useMutation({
-    mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+  const handleUpdateGroup = async () => {
+    let bannerUrl = undefined;
+    
+    if (bannerFile) {
+      const fileExt = bannerFile.name.split('.').pop();
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('files')
+        .upload(filePath, bannerFile);
+      
+      if (uploadError) throw uploadError;
 
+      const { data: { publicUrl } } = supabase.storage
+        .from('files')
+        .getPublicUrl(filePath);
+      
+      bannerUrl = publicUrl;
+    }
+
+    updateGroup.mutate({
+      name: editedName,
+      description: editedDescription,
+      bannerUrl,
+    });
+  };
+
+  const deleteMessage = useMutation({
+    mutationFn: async (messageId: string) => {
       const { error } = await supabase
-        .from('group_members')
-        .insert([{ group_id: id, user_id: user.id }]);
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
 
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', id] });
       toast({
         title: "Success",
-        description: "You have joined the club",
+        description: "Message deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['club', id] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to join the club",
-        variant: "destructive",
-      });
-      console.error("Join error:", error);
     },
   });
+
+  useEffect(() => {
+    if (clubData) {
+      setEditedName(clubData.name);
+      setEditedDescription(clubData.description);
+    }
+  }, [clubData]);
 
   if (!clubData) return null;
 
@@ -145,40 +185,68 @@ const ClubDetails = () => {
 
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold text-sage-800">{clubData.name}</h1>
-              <div className="flex gap-2">
-                {!clubData.isMember && !clubData.isCreator && (
-                  <Button
-                    onClick={() => joinGroup.mutate()}
-                    className="bg-sage-600 hover:bg-sage-700"
+              {isEditing ? (
+                <div className="space-y-4 w-full">
+                  <Input
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    placeholder="Club name"
+                  />
+                  <Textarea
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    placeholder="Club description"
+                  />
+                  <div 
+                    className="border-2 border-dashed border-sage-200 rounded-lg p-4 text-center cursor-pointer"
+                    onClick={() => document.getElementById('banner-upload')?.click()}
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    Join Club
-                  </Button>
-                )}
-                {clubData.isCreator && (
-                  <Button
-                    onClick={() => togglePrivacy.mutate()}
-                    variant="outline"
-                    className="flex items-center"
-                  >
-                    {isPublic ? (
-                      <>
-                        <LockOpen className="h-4 w-4 mr-2" />
-                        Make Private
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-4 w-4 mr-2" />
-                        Make Public
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-sage-500" />
+                    <p className="text-sm text-sage-600">
+                      {bannerFile ? bannerFile.name : "Click to upload new banner"}
+                    </p>
+                    <input
+                      id="banner-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files && setBannerFile(e.target.files[0])}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleUpdateGroup}>Save Changes</Button>
+                    <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-bold text-sage-800">{clubData.name}</h1>
+                  {clubData.isCreator && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Club
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
-            <p className="text-sage-600 mb-4">{clubData.description}</p>
             
+            {!isEditing && (
+              <>
+                <p className="text-sage-600 mb-4">{clubData.description}</p>
+                {clubData.banner_url && (
+                  <img
+                    src={clubData.banner_url}
+                    alt="Club banner"
+                    className="w-full h-48 object-cover rounded-lg mb-4"
+                  />
+                )}
+              </>
+            )}
+
             {(clubData.isMember || clubData.isCreator) && (
               <div className="space-y-6">
                 <div className="border-t pt-6">
