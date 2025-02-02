@@ -1,17 +1,36 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2, Calendar, Link as LinkIcon } from "lucide-react";
+import { Edit, Trash2, Calendar, Link as LinkIcon, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function OpportunityDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    type: "",
+    description: "",
+    deadline: "",
+    application_link: "",
+  });
 
   const { data: opportunity, isLoading } = useQuery({
     queryKey: ["opportunity", id],
@@ -29,9 +48,53 @@ export function OpportunityDetails() {
         .single();
 
       if (error) throw error;
+      
+      // Initialize form data when opportunity is loaded
+      if (data) {
+        setFormData({
+          title: data.title,
+          type: data.type,
+          description: data.description,
+          deadline: data.deadline ? data.deadline.split('T')[0] : "",
+          application_link: data.application_link || "",
+        });
+      }
+      
       return data;
     },
   });
+
+  const handleUpdate = async () => {
+    try {
+      const { error } = await supabase
+        .from("opportunities")
+        .update({
+          title: formData.title,
+          type: formData.type,
+          description: formData.description,
+          deadline: formData.deadline,
+          application_link: formData.application_link,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Opportunity updated successfully",
+      });
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["opportunity", id] });
+    } catch (error: any) {
+      console.error("Error updating opportunity:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update opportunity",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -47,13 +110,38 @@ export function OpportunityDetails() {
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       <div className="flex justify-between items-start mb-6">
-        <h1 className="text-3xl font-bold text-sage-800">{opportunity.title}</h1>
-        {isOwner && (
+        {isEditing ? (
+          <div className="w-full">
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="text-2xl font-bold mb-4"
+            />
+            <Select
+              value={formData.type}
+              onValueChange={(value) => setFormData({ ...formData, type: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="internship">Internship</SelectItem>
+                <SelectItem value="job">Job</SelectItem>
+                <SelectItem value="mentorship">Mentorship</SelectItem>
+                <SelectItem value="funding">Funding</SelectItem>
+                <SelectItem value="gig">Gig</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <h1 className="text-3xl font-bold text-sage-800">{opportunity.title}</h1>
+        )}
+        {isOwner && !isEditing && (
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(`/opportunities/${id}/edit`)}
+              onClick={() => setIsEditing(true)}
             >
               <Edit className="h-4 w-4 mr-2" />
               Edit
@@ -87,43 +175,87 @@ export function OpportunityDetails() {
             </Button>
           </div>
         )}
+        {isEditing && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-sage-600 hover:bg-sage-700"
+              onClick={handleUpdate}
+            >
+              Save Changes
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
-        <div className="flex items-center text-sage-600">
-          <Calendar className="h-5 w-5 mr-2" />
-          {opportunity.deadline ? (
-            <span>
-              Deadline: {format(new Date(opportunity.deadline), "PPP")}
-              {isExpired && (
-                <span className="ml-2 text-red-500 font-medium">(Closed)</span>
+        {isEditing ? (
+          <>
+            <div className="space-y-4">
+              <Input
+                type="date"
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              />
+              <Input
+                type="url"
+                placeholder="Application Link"
+                value={formData.application_link}
+                onChange={(e) => setFormData({ ...formData, application_link: e.target.value })}
+              />
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="min-h-[200px]"
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center text-sage-600">
+              <Calendar className="h-5 w-5 mr-2" />
+              {opportunity.deadline ? (
+                <span>
+                  Deadline: {format(new Date(opportunity.deadline), "PPP")}
+                  {isExpired && (
+                    <span className="ml-2 text-red-500 font-medium">(Closed)</span>
+                  )}
+                </span>
+              ) : (
+                <span>No deadline specified</span>
               )}
-            </span>
-          ) : (
-            <span>No deadline specified</span>
-          )}
-        </div>
+            </div>
 
-        <div className="prose max-w-none">
-          <h2 className="text-xl font-semibold mb-2">Description</h2>
-          <p className="whitespace-pre-wrap">{opportunity.description}</p>
-        </div>
+            <div className="prose max-w-none">
+              <h2 className="text-xl font-semibold mb-2">Description</h2>
+              <p className="whitespace-pre-wrap">{opportunity.description}</p>
+            </div>
 
-        <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold">Posted by</h2>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{opportunity.profiles.name}</span>
-            <span className="text-sage-500">({opportunity.profiles.role})</span>
-          </div>
-        </div>
+            <div className="flex flex-col gap-4">
+              <h2 className="text-xl font-semibold">Posted by</h2>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{opportunity.profiles.name}</span>
+                <span className="text-sage-500">({opportunity.profiles.role})</span>
+              </div>
+            </div>
 
-        {!isExpired && (
-          <div className="mt-8">
-            <Button className="w-full sm:w-auto bg-sage-600 hover:bg-sage-700">
-              <LinkIcon className="h-4 w-4 mr-2" />
-              Apply Now
-            </Button>
-          </div>
+            {!isExpired && opportunity.application_link && (
+              <div className="mt-8">
+                <Button 
+                  className="w-full sm:w-auto bg-sage-600 hover:bg-sage-700"
+                  onClick={() => window.open(opportunity.application_link, '_blank')}
+                >
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  Apply Now
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
