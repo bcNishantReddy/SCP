@@ -31,39 +31,54 @@ export function AuthGuard({ children }: AuthGuardProps) {
             navigate("/auth/signin", { replace: true });
           }
           setIsAuthenticated(false);
-        } else {
-          // Attempt to refresh the session if it's close to expiring
-          const expiresAt = session?.expires_at ?? 0;
-          const timeNow = Math.floor(Date.now() / 1000);
-          
-          if (expiresAt - timeNow < 300) { // Increased to 5 minutes for safety
-            console.log("Session about to expire, refreshing...");
-            try {
-              const { data: { session: refreshedSession }, error: refreshError } = 
-                await supabase.auth.refreshSession();
-                
-              if (refreshError) {
-                console.error("Session refresh error:", refreshError);
-                throw refreshError;
-              }
-              
-              if (!refreshedSession) {
-                throw new Error("Failed to refresh session");
-              }
-              
-              console.log("Session refreshed successfully");
-            } catch (refreshError) {
-              console.error("Failed to refresh session:", refreshError);
-              throw refreshError;
-            }
+          return;
+        }
+
+        // Check if user is approved
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_approved')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Profile error:", profileError);
+          throw profileError;
+        }
+
+        if (!profile.is_approved) {
+          console.log("User not approved, redirecting to pending page");
+          await supabase.auth.signOut();
+          navigate("/auth/pending", { replace: true });
+          setIsAuthenticated(false);
+          return;
+        }
+
+        // Attempt to refresh the session if it's close to expiring
+        const expiresAt = session?.expires_at ?? 0;
+        const timeNow = Math.floor(Date.now() / 1000);
+        
+        if (expiresAt - timeNow < 300) {
+          console.log("Session about to expire, refreshing...");
+          const { data: { session: refreshedSession }, error: refreshError } = 
+            await supabase.auth.refreshSession();
+            
+          if (refreshError) {
+            console.error("Session refresh error:", refreshError);
+            throw refreshError;
           }
           
-          setIsAuthenticated(true);
+          if (!refreshedSession) {
+            throw new Error("Failed to refresh session");
+          }
+          
+          console.log("Session refreshed successfully");
         }
+        
+        setIsAuthenticated(true);
       } catch (error: any) {
         console.error("Auth error:", error);
         
-        // Handle specific error cases
         if (error.message?.includes('session_not_found') || 
             error.message?.includes('refresh_token_not_found')) {
           toast({
@@ -72,7 +87,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
             variant: "destructive",
           });
           
-          // Clear any existing session data
           await supabase.auth.signOut();
           setIsAuthenticated(false);
         }
@@ -80,16 +94,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
         if (!location.pathname.includes('/auth/')) {
           navigate("/auth/signin", { replace: true });
         }
-        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Initial auth check
     checkAuth();
 
-    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
@@ -99,13 +110,26 @@ export function AuthGuard({ children }: AuthGuardProps) {
           if (!location.pathname.includes('/auth/')) {
             navigate("/auth/signin", { replace: true });
           }
-        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setIsAuthenticated(true);
+        } else if (event === 'SIGNED_IN') {
+          // Check if user is approved when they sign in
+          if (session?.user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('is_approved')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profile?.is_approved) {
+              setIsAuthenticated(true);
+            } else {
+              navigate("/auth/pending", { replace: true });
+              setIsAuthenticated(false);
+            }
+          }
         }
       }
     );
 
-    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };

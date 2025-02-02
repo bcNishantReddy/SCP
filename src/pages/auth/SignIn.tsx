@@ -15,23 +15,8 @@ export default function SignIn() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const validateInputs = () => {
-    if (!email.trim() || !password) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter both email and password",
-        variant: "destructive",
-      });
-      return false;
-    }
-    return true;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateInputs()) return;
-    
     setIsLoading(true);
 
     try {
@@ -39,24 +24,34 @@ export default function SignIn() {
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password: password,
+        password,
       });
 
       if (error) {
         console.error("Sign in error:", error);
-        let errorMessage = "Invalid credentials. Please check your email and password.";
-        
-        if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Please verify your email address before signing in.";
-        } else if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Invalid email or password. Note: If you're trying to sign in as admin, use boos@gmail.com";
-        }
-        
-        throw new Error(errorMessage);
+        throw error;
       }
 
       if (!data.user || !data.session) {
         throw new Error("No user data returned from authentication");
+      }
+
+      // Check if user is approved
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_approved')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      if (!profile.is_approved) {
+        // Sign out the user if not approved
+        await supabase.auth.signOut();
+        navigate("/auth/pending");
+        return;
       }
 
       console.log("Sign in successful:", data.user);
@@ -67,9 +62,17 @@ export default function SignIn() {
       navigate("/feed");
     } catch (error: any) {
       console.error("Sign in process error:", error);
+      let errorMessage = "An error occurred during sign in.";
+      
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Invalid email or password.";
+      } else if (error.message.includes("Email not confirmed")) {
+        errorMessage = "Please verify your email address before signing in.";
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "An error occurred during sign in. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -113,13 +116,12 @@ export default function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
               />
             </div>
           </div>
           <Button
             type="submit"
-            className="w-full hover-effect"
+            className="w-full bg-sage-600 hover:bg-sage-700"
             disabled={isLoading}
           >
             {isLoading ? "Signing in..." : "Sign in"}

@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Video, Edit } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -32,24 +32,6 @@ const TutorialDetails = () => {
       return data;
     },
   });
-
-  const { data: currentUser } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      return profile;
-    },
-  });
-
-  const isAdmin = currentUser?.role === "admin";
 
   const updateTutorial = useMutation({
     mutationFn: async (data: {
@@ -182,15 +164,6 @@ const TutorialDetails = () => {
                 ) : (
                   <>
                     <h1 className="text-3xl font-bold text-sage-800">{tutorial.title}</h1>
-                    {isAdmin && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Tutorial
-                      </Button>
-                    )}
                   </>
                 )}
               </div>

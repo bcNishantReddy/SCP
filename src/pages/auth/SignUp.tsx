@@ -33,32 +33,29 @@ export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const validatePassword = (password: string) => {
-    if (password.length < 6) {
-      return "Password must be at least 6 characters long";
-    }
-    return null;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate password before submission
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) {
-      toast({
-        title: "Invalid Password",
-        description: passwordError,
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
+      console.log("Attempting signup with:", { 
+        email: formData.email.trim(),
+        role: formData.role 
+      });
+
+      // First check if email already exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', formData.email.trim())
+        .maybeSingle();
+
+      if (existingUser) {
+        throw new Error("An account with this email already exists");
+      }
+
       const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
         options: {
           data: {
@@ -70,24 +67,18 @@ export default function SignUp() {
 
       if (error) throw error;
 
+      console.log("Signup successful:", data);
+
       toast({
         title: "Registration Successful!",
         description: "Please wait for admin approval to access your account.",
       });
       navigate("/auth/pending");
     } catch (error: any) {
-      let errorMessage = error.message;
-      // Parse the error message if it's in JSON format
-      try {
-        const parsedError = JSON.parse(error.message);
-        errorMessage = parsedError.message || errorMessage;
-      } catch {
-        // If parsing fails, use the original error message
-      }
-      
+      console.error("Signup error:", error);
       toast({
         title: "Error",
-        description: errorMessage || "Something went wrong. Please try again.",
+        description: error.message || "Something went wrong during signup.",
         variant: "destructive",
       });
     } finally {
@@ -177,7 +168,7 @@ export default function SignUp() {
           </div>
           <Button
             type="submit"
-            className="w-full hover-effect"
+            className="w-full bg-sage-600 hover:bg-sage-700"
             disabled={isLoading}
           >
             {isLoading ? "Creating account..." : "Create account"}
