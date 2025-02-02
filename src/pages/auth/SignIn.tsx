@@ -15,12 +15,28 @@ export default function SignIn() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const validateInputs = () => {
+    if (!email.trim() || !password) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateInputs()) return;
+    
     setIsLoading(true);
 
     try {
-      console.log("Attempting sign in with:", { email });
+      console.log("Attempting sign in with:", { email: email.trim() });
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
@@ -32,6 +48,8 @@ export default function SignIn() {
         
         if (error.message.includes("Email not confirmed")) {
           errorMessage = "Please verify your email address before signing in.";
+        } else if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password. Note: If you're trying to sign in as admin, use boos@gmail.com";
         }
         
         throw new Error(errorMessage);
