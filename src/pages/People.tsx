@@ -56,6 +56,10 @@ const People = () => {
     window.location.href = `mailto:${profile.email}`;
   };
 
+  const handleProfile = (profile: any) => {
+    navigate(`/profile/${profile.id}`);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-sage-50">
