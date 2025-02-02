@@ -1,20 +1,51 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, BookOpen, Play, Clock } from "lucide-react";
+import { Search, BookOpen, Play, Clock, Edit, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddTutorialModal } from "@/components/modals/AddTutorialModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Tutorials = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      return profile;
+    },
+  });
+
+  const isAdmin = currentUser?.role === "admin";
 
   const { data: tutorials, isLoading } = useQuery({
-    queryKey: ["tutorials"],
+    queryKey: ["tutorials", searchQuery],
     queryFn: async () => {
       console.log("Fetching tutorials...");
       const { data, error } = await supabase
@@ -37,6 +68,65 @@ const Tutorials = () => {
     },
   });
 
+  const deleteTutorial = useMutation({
+    mutationFn: async (tutorialId: string) => {
+      console.log("Deleting tutorial:", tutorialId);
+      
+      // Get the current user's auth ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      // Verify admin status
+      const { data: adminProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (profileError || !adminProfile) {
+        throw new Error("Unauthorized: User is not an admin");
+      }
+
+      const { error } = await supabase
+        .from("tutorials")
+        .delete()
+        .eq("id", tutorialId);
+
+      if (error) throw error;
+
+      // Log admin action
+      const { error: logError } = await supabase
+        .from("admin_actions")
+        .insert({
+          admin_id: adminProfile.id,
+          action_type: "delete_tutorial",
+          target_table: "tutorials",
+          target_id: tutorialId,
+          details: { action: "deleted_tutorial" }
+        });
+
+      if (logError) {
+        console.error("Error logging admin action:", logError);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tutorials"] });
+      toast({
+        title: "Success",
+        description: "Tutorial deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Error in deleteTutorial mutation:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSearch = (value: string) => {
     setSearchQuery(value);
   };
@@ -48,6 +138,7 @@ const Tutorials = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-sage-800">Tutorials</h1>
+            {isAdmin && <AddTutorialModal />}
           </div>
 
           <div className="relative mb-6">
@@ -74,8 +165,7 @@ const Tutorials = () => {
               {tutorials?.map((tutorial) => (
                 <div
                   key={tutorial.id}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/tutorials/${tutorial.id}`)}
+                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                 >
                   <div className="relative">
                     <div className="h-48 bg-sage-200">
@@ -84,6 +174,7 @@ const Tutorials = () => {
                           variant="secondary"
                           size="icon"
                           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                          onClick={() => navigate(`/tutorials/${tutorial.id}`)}
                         >
                           <Play className="h-6 w-6 text-sage-600" />
                         </Button>
@@ -104,9 +195,54 @@ const Tutorials = () => {
                         <Clock className="h-4 w-4" />
                         <span>5 min read</span>
                       </div>
-                      <Button variant="outline" className="text-sage-600 hover:text-sage-700">
-                        Start Tutorial
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="text-sage-600 hover:text-sage-700"
+                          onClick={() => navigate(`/tutorials/${tutorial.id}`)}
+                        >
+                          View Tutorial
+                        </Button>
+                        {isAdmin && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => navigate(`/tutorials/${tutorial.id}/edit`)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="text-red-600"
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Tutorial</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this tutorial? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteTutorial.mutate(tutorial.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
