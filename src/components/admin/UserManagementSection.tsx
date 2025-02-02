@@ -63,19 +63,31 @@ export const UserManagementSection = () => {
     mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
       console.log("Updating user role:", { userId, role });
       
-      // Get the current user's auth ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
+      // First get the current session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        throw new Error("Failed to get current session");
+      }
 
-      // Verify admin status
+      if (!sessionData.session) {
+        throw new Error("No active session");
+      }
+
+      // Verify admin status using the session user's id
       const { data: adminProfile, error: profileError } = await supabase
         .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+        .select("id, role")
+        .eq("id", sessionData.session.user.id)
+        .single();
 
-      if (profileError || !adminProfile) {
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        throw new Error("Failed to verify admin status");
+      }
+
+      if (!adminProfile || adminProfile.role !== "admin") {
         throw new Error("Unauthorized: User is not an admin");
       }
 
