@@ -15,11 +15,12 @@ export const AuditLogSection = () => {
   const { data: auditLogs, refetch } = useQuery({
     queryKey: ["auditLogs"],
     queryFn: async () => {
+      console.log("Fetching audit logs...");
       const { data, error } = await supabase
         .from("admin_actions")
         .select(`
           *,
-          admin:profiles!inner(
+          profiles!admin_actions_admin_id_fkey(
             email,
             name
           )
@@ -31,6 +32,8 @@ export const AuditLogSection = () => {
         console.error("Error fetching audit logs:", error);
         throw error;
       }
+      
+      console.log("Fetched audit logs:", data);
       return data;
     },
   });
@@ -74,7 +77,7 @@ export const AuditLogSection = () => {
           <TableBody>
             {auditLogs?.map((log) => (
               <TableRow key={log.id}>
-                <TableCell>{log.admin?.name}</TableCell>
+                <TableCell>{log.profiles?.name}</TableCell>
                 <TableCell className="capitalize">
                   {log.action_type.replace(/_/g, " ")}
                 </TableCell>
