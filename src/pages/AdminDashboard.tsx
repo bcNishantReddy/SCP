@@ -21,6 +21,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Users, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
+
+type UserRole = Database["public"]["Enums"]["user_role"];
 
 const AdminDashboard = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -58,7 +61,7 @@ const AdminDashboard = () => {
 
   // Update user role mutation
   const updateUserRole = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
       const { error } = await supabase
         .from("profiles")
         .update({ role })
@@ -262,7 +265,7 @@ const AdminDashboard = () => {
                         <TableCell>
                           <Select
                             value={user.role}
-                            onValueChange={(value) =>
+                            onValueChange={(value: UserRole) =>
                               updateUserRole.mutate({
                                 userId: user.id,
                                 role: value,
