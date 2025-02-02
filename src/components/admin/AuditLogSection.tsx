@@ -20,7 +20,7 @@ export const AuditLogSection = () => {
         .from("admin_actions")
         .select(`
           *,
-          admin:profiles(
+          profiles!admin_actions_admin_id_fkey (
             email,
             name
           )
@@ -77,7 +77,7 @@ export const AuditLogSection = () => {
           <TableBody>
             {auditLogs?.map((log) => (
               <TableRow key={log.id}>
-                <TableCell>{log.admin?.name}</TableCell>
+                <TableCell>{log.profiles?.name}</TableCell>
                 <TableCell className="capitalize">
                   {log.action_type.replace(/_/g, " ")}
                 </TableCell>
