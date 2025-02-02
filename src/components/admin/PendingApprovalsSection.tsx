@@ -51,7 +51,7 @@ export const PendingApprovalsSection = () => {
         .select("id")
         .eq("id", user.id)
         .eq("role", "admin")
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error("Error getting admin profile:", profileError);
@@ -88,10 +88,11 @@ export const PendingApprovalsSection = () => {
 
       if (logError) {
         console.error("Error logging admin action:", logError);
-        throw logError;
+        // Don't throw here - the main action succeeded
+        console.warn("Failed to log admin action but user was approved");
+      } else {
+        console.log("Successfully logged admin action");
       }
-
-      console.log("Successfully logged admin action");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingUsers"] });

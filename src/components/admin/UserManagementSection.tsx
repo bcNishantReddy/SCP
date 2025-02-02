@@ -48,7 +48,7 @@ export const UserManagementSection = () => {
         .from("profiles")
         .select("*")
         .ilike("name", `%${searchTerm}%`)
-        .eq("is_approved", true); // Only show approved users
+        .eq("is_approved", true);
 
       if (error) {
         console.error("Error fetching users:", error);
@@ -73,7 +73,7 @@ export const UserManagementSection = () => {
         .select("id")
         .eq("id", user.id)
         .eq("role", "admin")
-        .single();
+        .maybeSingle();
 
       if (profileError || !adminProfile) {
         throw new Error("Unauthorized: User is not an admin");
@@ -99,7 +99,8 @@ export const UserManagementSection = () => {
 
       if (logError) {
         console.error("Error logging admin action:", logError);
-        throw logError;
+        // Don't throw here - the main action succeeded
+        console.warn("Failed to log admin action but role was updated");
       }
     },
     onSuccess: () => {
@@ -133,7 +134,7 @@ export const UserManagementSection = () => {
         .select("id")
         .eq("id", user.id)
         .eq("role", "admin")
-        .single();
+        .maybeSingle();
 
       if (profileError || !adminProfile) {
         throw new Error("Unauthorized: User is not an admin");
@@ -159,7 +160,8 @@ export const UserManagementSection = () => {
 
       if (logError) {
         console.error("Error logging admin action:", logError);
-        throw logError;
+        // Don't throw here - the main action succeeded
+        console.warn("Failed to log admin action but user was deleted");
       }
     },
     onSuccess: () => {
@@ -213,12 +215,9 @@ export const UserManagementSection = () => {
                   <TableCell>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Select
-                          value={user.role}
-                          onValueChange={(value: UserRole) => {}}
-                        >
+                        <Select defaultValue={user.role}>
                           <SelectTrigger className="w-[180px]">
-                            <SelectValue />
+                            <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="student">Student</SelectItem>
