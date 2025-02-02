@@ -25,7 +25,28 @@ export const PendingApprovalsSection = () => {
     mutationFn: async (userId: string) => {
       console.log("Approving user:", userId);
       
-      // First update the user's approval status
+      // Get the current user's auth ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      // First verify this user is an admin
+      const { data: adminProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .eq("role", "admin")
+        .single();
+
+      if (profileError) {
+        console.error("Error getting admin profile:", profileError);
+        throw new Error("Failed to verify admin status");
+      }
+
+      if (!adminProfile) {
+        throw new Error("Unauthorized: User is not an admin");
+      }
+
+      // Now that we've verified admin status, update the user's approval
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ is_approved: true })
@@ -33,30 +54,9 @@ export const PendingApprovalsSection = () => {
 
       if (updateError) throw updateError;
 
-      // Get the current user's auth ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-
-      // Get the admin's profile and verify they are an admin
-      const { data: adminProfile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, role")
-        .eq("id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Error getting admin profile:", profileError);
-        throw profileError;
-      }
-
-      if (!adminProfile) {
-        throw new Error("Admin profile not found or user is not an admin");
-      }
-
       console.log("Logging admin action with admin profile:", adminProfile);
       
-      // Use the admin's profile ID for the admin_actions record
+      // Log the admin action
       const { error: logError } = await supabase
         .from("admin_actions")
         .insert({
