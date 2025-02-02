@@ -37,13 +37,12 @@ export const PendingApprovalsSection = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      // Get the admin's profile ID and verify they are an admin
+      // Get the admin's profile and verify they are an admin
       const { data: adminProfile, error: profileError } = await supabase
         .from("profiles")
         .select("id, role")
         .eq("id", user.id)
-        .eq("role", "admin")
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error("Error getting admin profile:", profileError);
