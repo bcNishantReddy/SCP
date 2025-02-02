@@ -123,7 +123,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      const workbook = await file.arrayBuffer();
+      console.log("Starting file upload process");
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) throw new Error("No authenticated user");
@@ -140,16 +140,24 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
+      console.log("Created bulk upload record:", data);
+
       // Create FormData to send file
       const formData = new FormData();
       formData.append("file", file);
       formData.append("uploadId", data.id);
 
+      console.log("Invoking bulk-upload function");
       const { data: functionData, error: functionError } = await supabase.functions.invoke('bulk-upload', {
         body: formData,
       });
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        console.error("Function error:", functionError);
+        throw functionError;
+      }
+
+      console.log("Upload function response:", functionData);
 
       toast({
         title: "Success",
