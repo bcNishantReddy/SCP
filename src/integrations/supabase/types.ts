@@ -81,7 +81,15 @@ export type Database = {
           target_id?: string
           target_table?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bulk_upload_errors: {
         Row: {
