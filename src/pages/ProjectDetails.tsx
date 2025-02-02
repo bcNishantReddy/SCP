@@ -70,7 +70,7 @@ const ProjectDetails = () => {
       console.log('Project data:', data);
       return data as Project;
     },
-    enabled: !!id,
+    enabled: Boolean(id),
   });
 
   const { data: joinRequests } = useQuery({
@@ -99,7 +99,7 @@ const ProjectDetails = () => {
       console.log('Join requests:', data);
       return data;
     },
-    enabled: !!id,
+    enabled: Boolean(id),
   });
 
   const handleJoinRequest = useMutation({
@@ -234,7 +234,7 @@ const ProjectDetails = () => {
             </Card>
 
             <TeamSection 
-              projectId={id!}
+              projectId={id}
               isOwner={isOwner}
               owner={project.owner}
               approvedRequests={approvedRequests}
