@@ -391,6 +391,7 @@ export type Database = {
       }
       opportunities: {
         Row: {
+          application_link: string | null
           created_at: string | null
           deadline: string | null
           description: string
@@ -401,6 +402,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          application_link?: string | null
           created_at?: string | null
           deadline?: string | null
           description: string
@@ -411,6 +413,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          application_link?: string | null
           created_at?: string | null
           deadline?: string | null
           description?: string

@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2, Calendar, Link as LinkIcon, Building2 } from "lucide-react";
+import { Edit, Trash2, Calendar, Link as LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
