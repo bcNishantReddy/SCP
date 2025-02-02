@@ -8,8 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 
 const Events = () => {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
   const { data: events, isLoading } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
@@ -39,8 +42,15 @@ const Events = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-sage-800">Events</h1>
-            <CreateEventModal />
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              Create Event
+            </Button>
           </div>
+
+          <CreateEventModal 
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+          />
 
           <div className="relative mb-6">
             <Search className="absolute left-3 top-3 h-4 w-4 text-sage-500" />
