@@ -1,167 +1,101 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, MapPin, ArrowLeft } from "lucide-react";
-import { format } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EditEventModal } from "@/components/modals/EditEventModal";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Navbar from "@/components/Navbar";
 
-export const EventDetails = () => {
+export function EventDetails() {
   const { id } = useParams();
-  const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const { data: event, isLoading } = useQuery({
-    queryKey: ["event", id],
+    queryKey: ['events', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("events")
+        .from('events')
         .select(`
           *,
-          profiles:user_id (name, avatar_url, role)
+          profile:profiles(name)
         `)
-        .eq("id", id)
-        .maybeSingle();
+        .eq('id', id)
+        .single();
 
       if (error) throw error;
       return data;
     },
   });
 
-  const handleDelete = async () => {
-    try {
-      const { error } = await supabase
-        .from("events")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Event deleted successfully",
-      });
-
-      navigate("/events");
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete event",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (isLoading) {
-    return <EventDetailsSkeleton />;
+    return <div>Loading...</div>;
   }
 
   if (!event) {
     return <div>Event not found</div>;
   }
 
-  const isOwner = user?.id === event.user_id;
-
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <Button 
-        variant="ghost" 
-        onClick={() => navigate("/events")}
-        className="mb-6"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Events
-      </Button>
+    <div className="min-h-screen bg-sage-50">
+      <Navbar />
+      <main className="container mx-auto px-4 pt-20">
+        <div className="max-w-4xl mx-auto">
+          <Button
+            variant="ghost"
+            className="mb-4"
+            onClick={() => navigate('/events')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Events
+          </Button>
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        {event.banner_url ? (
-          <img 
-            src={event.banner_url} 
-            alt={event.title} 
-            className="w-full h-64 object-cover"
-          />
-        ) : (
-          <div className="h-64 bg-sage-200" />
-        )}
-        
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <h1 className="text-2xl font-bold">{event.title}</h1>
-            {isOwner && (
-              <div className="flex space-x-2">
-                <EditEventModal event={event} />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Delete Event</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Event</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this event? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDelete}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center space-x-4 text-sage-600 mb-6">
-            <div className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              <span>{format(new Date(event.date), "PPP • p")}</span>
+          {event.banner_url && (
+            <div className="w-full h-64 mb-6 rounded-lg overflow-hidden">
+              <img
+                src={event.banner_url}
+                alt={event.title}
+                className="w-full h-full object-cover"
+              />
             </div>
-            <div className="flex items-center">
-              <MapPin className="h-5 w-5 mr-2" />
-              <span>{event.location}</span>
-            </div>
-          </div>
-
-          <p className="text-sage-600 mb-8">{event.description}</p>
-
-          {event.registration_url && (
-            <Button 
-              className="w-full bg-sage-600 hover:bg-sage-700"
-              onClick={() => window.open(event.registration_url, '_blank')}
-            >
-              Register for Event
-            </Button>
           )}
+
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
+              <p className="text-sage-600">
+                Organized by {event.profile?.name}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Date & Time</h2>
+                <p>{new Date(event.date).toLocaleString()}</p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Location</h2>
+                <p>{event.location}</p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Description</h2>
+                <p className="whitespace-pre-wrap">{event.description}</p>
+              </div>
+
+              {event.registration_url && (
+                <div className="pt-4">
+                  <Button
+                    className="w-full sm:w-auto"
+                    onClick={() => window.open(event.registration_url, '_blank')}
+                  >
+                    Register Now
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
-};
-
-const EventDetailsSkeleton = () => (
-  <div className="max-w-4xl mx-auto p-6">
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <Skeleton className="h-64 w-full" />
-      <div className="p-6">
-        <Skeleton className="h-8 w-2/3 mb-4" />
-        <div className="space-y-4 mb-6">
-          <Skeleton className="h-6 w-1/3" />
-          <Skeleton className="h-6 w-1/4" />
-        </div>
-        <Skeleton className="h-24 w-full mb-8" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    </div>
-  </div>
-);
+}

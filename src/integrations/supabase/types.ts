@@ -799,6 +799,10 @@ export type Database = {
         }
         Returns: number
       }
+      delete_old_posts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       increment_likes: {
         Args: {
           post_id: string
@@ -808,6 +812,12 @@ export type Database = {
       is_opportunity_closed: {
         Args: {
           deadline: string
+        }
+        Returns: boolean
+      }
+      is_post_editable: {
+        Args: {
+          post_created_at: string
         }
         Returns: boolean
       }
