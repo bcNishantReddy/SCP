@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { EditProjectModal } from "@/components/modals/EditProjectModal";
 
 interface ProjectCardProps {
   project: {
@@ -17,16 +19,16 @@ interface ProjectCardProps {
     user_id: string;
   };
   currentUserId: string | undefined;
-  onDelete?: () => void; // Make onDelete optional
+  onDelete?: () => void;
 }
 
 export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardProps) => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isOwner = project.user_id === currentUserId;
 
-  // Fetch join requests for this project
   const { data: joinRequests } = useQuery({
     queryKey: ['projectJoinRequests', project.id],
     queryFn: async () => {
@@ -98,7 +100,7 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
   };
 
   const handleEdit = () => {
-    navigate(`/projects/${project.id}/edit`);
+    setIsEditModalOpen(true);
   };
 
   const handleDelete = () => {
@@ -107,7 +109,10 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
     }
   };
 
-  // Get the current user's join request status
+  const handleProjectUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
+  };
+
   const userJoinRequest = joinRequests?.find(
     request => request.user_id === currentUserId
   );
@@ -126,7 +131,8 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
     : project.description;
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <>
+      <Card className="hover:shadow-lg transition-shadow">
       {project.banner_url ? (
         <div 
           className="h-48 bg-cover bg-center rounded-t-lg" 
@@ -204,6 +210,14 @@ export const ProjectCard = ({ project, currentUserId, onDelete }: ProjectCardPro
           )}
         </div>
       </CardFooter>
-    </Card>
+      </Card>
+      
+      <EditProjectModal
+        project={project}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdate={handleProjectUpdate}
+      />
+    </>
   );
 };

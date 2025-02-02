@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { AddProjectModal } from "@/components/modals/AddProjectModal";
-import { ProjectCard } from "@/components/projects/ProjectCard";
+import { ProjectsHeader } from "@/components/projects/ProjectsHeader";
+import { ProjectSearch } from "@/components/projects/ProjectSearch";
+import { ProjectList } from "@/components/projects/ProjectList";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
@@ -52,21 +50,9 @@ const Projects = () => {
       <Navbar />
       <main className="container mx-auto px-4 pt-20">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Projects</h1>
-            <AddProjectModal />
-          </div>
-
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search projects..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
+          <ProjectsHeader />
+          <ProjectSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+          
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
@@ -74,15 +60,10 @@ const Projects = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects?.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
+            <ProjectList 
+              projects={projects || []} 
+              currentUserId={currentUserId}
+            />
           )}
         </div>
       </main>
