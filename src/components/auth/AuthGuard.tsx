@@ -17,7 +17,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           navigate("/auth/signin");
-        } else if (location.pathname === "/") {
+        } else if (location.pathname === "/" || location.pathname === "/auth/signin") {
           navigate("/feed");
         }
       } catch (error) {
@@ -32,6 +32,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
       (event, session) => {
         if (!session) {
           navigate("/auth/signin");
+        } else if (location.pathname === "/" || location.pathname === "/auth/signin") {
+          navigate("/feed");
         }
       }
     );

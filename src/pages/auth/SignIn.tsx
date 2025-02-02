@@ -31,7 +31,7 @@ export default function SignIn() {
         title: "Success!",
         description: "You have successfully signed in.",
       });
-      navigate("/");
+      navigate("/feed");
     } catch (error: any) {
       toast({
         title: "Error",
