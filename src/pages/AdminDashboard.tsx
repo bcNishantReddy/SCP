@@ -145,14 +145,11 @@ const AdminDashboard = () => {
       formData.append("file", file);
       formData.append("uploadId", data.id);
 
-      const response = await fetch("/api/bulk-upload", {
-        method: "POST",
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('bulk-upload', {
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to process file");
-      }
+      if (functionError) throw functionError;
 
       toast({
         title: "Success",
@@ -163,6 +160,7 @@ const AdminDashboard = () => {
       setFile(null);
       queryClient.invalidateQueries({ queryKey: ["users"] });
     } catch (error: any) {
+      console.error("Bulk upload error:", error);
       toast({
         title: "Error",
         description: error.message,
