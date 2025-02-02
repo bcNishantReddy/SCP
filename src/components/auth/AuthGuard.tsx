@@ -21,6 +21,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         console.log("Checking auth session:", session);
         
         if (sessionError) {
+          console.error("Session error:", sessionError);
           throw sessionError;
         }
 
@@ -35,17 +36,25 @@ export function AuthGuard({ children }: AuthGuardProps) {
           const expiresAt = session?.expires_at ?? 0;
           const timeNow = Math.floor(Date.now() / 1000);
           
-          if (expiresAt - timeNow < 60) { // If session expires in less than 1 minute
+          if (expiresAt - timeNow < 300) { // Increased to 5 minutes for safety
             console.log("Session about to expire, refreshing...");
-            const { data: { session: refreshedSession }, error: refreshError } = 
-              await supabase.auth.refreshSession();
+            try {
+              const { data: { session: refreshedSession }, error: refreshError } = 
+                await supabase.auth.refreshSession();
+                
+              if (refreshError) {
+                console.error("Session refresh error:", refreshError);
+                throw refreshError;
+              }
               
-            if (refreshError) {
+              if (!refreshedSession) {
+                throw new Error("Failed to refresh session");
+              }
+              
+              console.log("Session refreshed successfully");
+            } catch (refreshError) {
+              console.error("Failed to refresh session:", refreshError);
               throw refreshError;
-            }
-            
-            if (!refreshedSession) {
-              throw new Error("Failed to refresh session");
             }
           }
           
@@ -65,6 +74,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           
           // Clear any existing session data
           await supabase.auth.signOut();
+          setIsAuthenticated(false);
         }
         
         if (!location.pathname.includes('/auth/')) {
@@ -84,7 +94,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         
-        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
           if (!location.pathname.includes('/auth/')) {
             navigate("/auth/signin", { replace: true });
