@@ -38,7 +38,7 @@ export function PostCard({ post }: PostCardProps) {
   // Check if post is within 5-minute edit window
   const isEditable = async () => {
     const { data, error } = await supabase
-      .rpc('is_post_editable', { post_created_at: post.created_at });
+      .rpc('is_post_editable', { post_created_at: post.created_at }) as { data: boolean, error: Error | null };
     
     if (error) {
       console.error('Error checking edit window:', error);
