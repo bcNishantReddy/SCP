@@ -33,16 +33,33 @@ export const PendingApprovalsSection = () => {
 
       if (updateError) throw updateError;
 
-      // Then log the admin action
+      // Get the admin's profile ID
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      console.log("Logging admin action for user:", user.id);
+      console.log("Getting admin profile for user:", user.id);
+      
+      const { data: adminProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error getting admin profile:", profileError);
+        throw profileError;
+      }
+
+      if (!adminProfile) {
+        throw new Error("Admin profile not found");
+      }
+
+      console.log("Logging admin action with admin profile:", adminProfile.id);
       
       const { error: logError } = await supabase
         .from("admin_actions")
         .insert({
-          admin_id: user.id,
+          admin_id: adminProfile.id,
           action_type: "approve_user",
           target_table: "profiles",
           target_id: userId,
