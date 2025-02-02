@@ -15,46 +15,13 @@ export default function SignIn() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Validate email format
-      if (!validateEmail(email)) {
-        throw new Error("Please enter a valid email address");
-      }
-
       console.log("Attempting sign in with:", { email: email.trim() });
       
-      // First check if user exists and is approved
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_approved')
-        .eq('email', email.trim())
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Error checking profile:", profileError);
-        throw new Error("Error verifying user status");
-      }
-
-      if (!profile) {
-        console.log("No profile found for email:", email);
-        throw new Error("No account found with this email");
-      }
-
-      if (!profile.is_approved) {
-        console.log("User not approved:", email);
-        throw new Error("Your account is pending approval");
-      }
-
-      // Attempt sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -69,6 +36,24 @@ export default function SignIn() {
         throw new Error("No user data returned from authentication");
       }
 
+      // Check if user is approved
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_approved')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      if (!profile.is_approved) {
+        // Sign out the user if not approved
+        await supabase.auth.signOut();
+        navigate("/auth/pending");
+        return;
+      }
+
       console.log("Sign in successful:", data.user);
       toast({
         title: "Success!",
@@ -80,15 +65,9 @@ export default function SignIn() {
       let errorMessage = "An error occurred during sign in.";
       
       if (error.message.includes("Invalid login credentials")) {
-        errorMessage = "Invalid email or password. Please check your credentials and try again.";
+        errorMessage = "Invalid email or password.";
       } else if (error.message.includes("Email not confirmed")) {
         errorMessage = "Please verify your email address before signing in.";
-      } else if (error.message.includes("pending approval")) {
-        errorMessage = "Your account is pending admin approval.";
-      } else if (error.message.includes("valid email")) {
-        errorMessage = error.message;
-      } else if (error.message.includes("No account found")) {
-        errorMessage = "No account found with this email address.";
       }
       
       toast({
