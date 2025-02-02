@@ -105,7 +105,12 @@ const People = () => {
                 key={profile.id}
                 className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
-                <div className="h-32 bg-sage-200" />
+                <div 
+                  className="h-32 bg-sage-200 bg-cover bg-center"
+                  style={{
+                    backgroundImage: profile.banner_url ? `url(${profile.banner_url})` : 'none'
+                  }}
+                />
                 <div className="relative px-4 pt-12 pb-4">
                   <div className="absolute -top-10 left-1/2 transform -translate-x-1/2">
                     <Avatar className="h-20 w-20 border-4 border-white">

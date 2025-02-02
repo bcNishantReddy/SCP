@@ -53,6 +53,36 @@ export type Database = {
           },
         ]
       }
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_id: string
+          target_table: string
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id: string
+          target_table: string
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string
+          target_table?: string
+        }
+        Relationships: []
+      }
       bulk_upload_errors: {
         Row: {
           created_at: string | null
@@ -897,6 +927,16 @@ export type Database = {
           post_created_at: string
         }
         Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          admin_id: string
+          action_type: string
+          target_table: string
+          target_id: string
+          details?: Json
+        }
+        Returns: undefined
       }
       process_user_upload: {
         Args: {

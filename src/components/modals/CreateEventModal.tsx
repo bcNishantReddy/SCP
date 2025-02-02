@@ -18,15 +18,42 @@ export function CreateEventModal({ isOpen, onClose }: CreateEventModalProps) {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
-  const [bannerUrl, setBannerUrl] = useState("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [registrationUrl, setRegistrationUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setBannerFile(e.target.files[0]);
+    }
+  };
 
   const createEvent = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      let bannerUrl = "";
+      
+      if (bannerFile) {
+        setIsUploading(true);
+        const fileExt = bannerFile.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const { error: uploadError, data } = await supabase.storage
+          .from('files')
+          .upload(`event-banners/${fileName}`, bannerFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('files')
+          .getPublicUrl(`event-banners/${fileName}`);
+
+        bannerUrl = publicUrl;
+        setIsUploading(false);
+      }
 
       const { data, error } = await supabase
         .from('events')
@@ -58,7 +85,7 @@ export function CreateEventModal({ isOpen, onClose }: CreateEventModalProps) {
       setDescription("");
       setDate("");
       setLocation("");
-      setBannerUrl("");
+      setBannerFile(null);
       setRegistrationUrl("");
     },
     onError: (error: Error) => {
@@ -120,13 +147,19 @@ export function CreateEventModal({ isOpen, onClose }: CreateEventModalProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="bannerUrl">Banner Image URL</Label>
+            <Label htmlFor="banner">Banner Image</Label>
             <Input
-              id="bannerUrl"
-              value={bannerUrl}
-              onChange={(e) => setBannerUrl(e.target.value)}
-              placeholder="https://example.com/image.jpg"
+              id="banner"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="cursor-pointer"
             />
+            {bannerFile && (
+              <p className="text-sm text-sage-600">
+                Selected file: {bannerFile.name}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="registrationUrl">Registration URL</Label>
@@ -140,9 +173,9 @@ export function CreateEventModal({ isOpen, onClose }: CreateEventModalProps) {
           <Button
             type="submit"
             className="w-full"
-            disabled={createEvent.isPending}
+            disabled={createEvent.isPending || isUploading}
           >
-            {createEvent.isPending ? "Creating..." : "Create Event"}
+            {createEvent.isPending || isUploading ? "Creating..." : "Create Event"}
           </Button>
         </form>
       </DialogContent>

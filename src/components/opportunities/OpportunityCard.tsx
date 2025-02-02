@@ -33,7 +33,10 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow">
+    <div 
+      className="bg-white rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => navigate(`/opportunities/${opportunity.id}`)}
+    >
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div className="flex items-start space-x-4 w-full sm:w-auto">
           <div className="p-3 bg-sage-100 rounded-lg shrink-0">
@@ -58,24 +61,6 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
               )}
             </div>
           </div>
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button 
-            variant="outline" 
-            className="w-full sm:w-auto text-sage-600 hover:text-sage-700"
-            onClick={() => navigate(`/opportunities/${opportunity.id}`)}
-          >
-            View Details
-          </Button>
-          {opportunity.application_link && !isExpired && (
-            <Button 
-              className="w-full sm:w-auto bg-sage-600 hover:bg-sage-700"
-              onClick={() => window.open(opportunity.application_link, '_blank')}
-            >
-              <LinkIcon className="h-4 w-4 mr-2" />
-              Apply
-            </Button>
-          )}
         </div>
       </div>
     </div>
