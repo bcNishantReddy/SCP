@@ -50,7 +50,7 @@ const Tutorials = () => {
       console.log("Fetching tutorials...");
       const { data, error } = await supabase
         .from("tutorials")
-        .select("*")
+        .select("*, profiles(name)")
         .ilike("title", `%${searchQuery}%`);
 
       if (error) {
@@ -70,45 +70,12 @@ const Tutorials = () => {
 
   const deleteTutorial = useMutation({
     mutationFn: async (tutorialId: string) => {
-      console.log("Deleting tutorial:", tutorialId);
-      
-      // Get the current user's auth ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-
-      // Verify admin status
-      const { data: adminProfile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (profileError || !adminProfile) {
-        throw new Error("Unauthorized: User is not an admin");
-      }
-
       const { error } = await supabase
         .from("tutorials")
         .delete()
         .eq("id", tutorialId);
 
       if (error) throw error;
-
-      // Log admin action
-      const { error: logError } = await supabase
-        .from("admin_actions")
-        .insert({
-          admin_id: adminProfile.id,
-          action_type: "delete_tutorial",
-          target_table: "tutorials",
-          target_id: tutorialId,
-          details: { action: "deleted_tutorial" }
-        });
-
-      if (logError) {
-        console.error("Error logging admin action:", logError);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tutorials"] });
@@ -127,10 +94,6 @@ const Tutorials = () => {
     },
   });
 
-  const handleSearch = (value: string) => {
-    setSearchQuery(value);
-  };
-
   return (
     <div className="min-h-screen bg-sage-50">
       <Navbar />
@@ -147,22 +110,20 @@ const Tutorials = () => {
               placeholder="Search tutorials..."
               className="pl-10"
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, index) => (
                 <div
-                  key={i}
+                  key={index}
                   className="bg-white rounded-lg shadow-sm h-[300px] animate-pulse"
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tutorials?.map((tutorial) => (
+              ))
+            ) : (
+              tutorials?.map((tutorial) => (
                 <div
                   key={tutorial.id}
                   className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
@@ -186,14 +147,14 @@ const Tutorials = () => {
                       <BookOpen className="h-4 w-4" />
                       <span>{tutorial.category || "General"}</span>
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">{tutorial.title}</h3>
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-1">{tutorial.title}</h3>
                     <p className="text-sage-600 text-sm mb-4 line-clamp-2">
                       {tutorial.content}
                     </p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 text-sm text-sage-500">
                         <Clock className="h-4 w-4" />
-                        <span>5 min read</span>
+                        <span>By {tutorial.profiles?.name || "Anonymous"}</span>
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -246,9 +207,9 @@ const Tutorials = () => {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </main>
     </div>

@@ -17,9 +17,9 @@ const TutorialDetails = () => {
       console.log("Fetching tutorial details...");
       const { data, error } = await supabase
         .from("tutorials")
-        .select("*, profile:profiles(name)")
+        .select("*, profiles(name)")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching tutorial:", error);
@@ -81,7 +81,7 @@ const TutorialDetails = () => {
     );
   }
 
-  const embedUrl = getYouTubeEmbedUrl(tutorial.video_url);
+  const embedUrl = tutorial.video_url ? getYouTubeEmbedUrl(tutorial.video_url) : null;
 
   return (
     <div className="min-h-screen bg-sage-50">
@@ -97,36 +97,38 @@ const TutorialDetails = () => {
             Back to Tutorials
           </Button>
 
-          {embedUrl && (
-            <div className="aspect-video w-full mb-8">
-              <iframe
-                src={embedUrl}
-                title={tutorial.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full rounded-lg shadow-lg"
-              />
-            </div>
-          )}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            {embedUrl && (
+              <div className="aspect-video w-full">
+                <iframe
+                  src={embedUrl}
+                  title={tutorial.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            )}
 
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
-            <div className="space-y-4">
-              <h1 className="text-3xl font-bold text-sage-800">{tutorial.title}</h1>
-              
-              {tutorial.profile?.name && (
-                <p className="text-sage-600">
-                  Created by {tutorial.profile.name}
-                </p>
-              )}
+            <div className="p-6 space-y-6">
+              <div className="space-y-4">
+                <h1 className="text-3xl font-bold text-sage-800">{tutorial.title}</h1>
+                
+                {tutorial.profiles?.name && (
+                  <p className="text-sage-600">
+                    Created by {tutorial.profiles.name}
+                  </p>
+                )}
 
-              {tutorial.category && (
-                <div className="inline-block bg-sage-100 text-sage-800 px-3 py-1 rounded-full text-sm">
-                  {tutorial.category}
+                {tutorial.category && (
+                  <div className="inline-block bg-sage-100 text-sage-800 px-3 py-1 rounded-full text-sm">
+                    {tutorial.category}
+                  </div>
+                )}
+
+                <div className="prose max-w-none">
+                  <p className="text-sage-600 whitespace-pre-wrap">{tutorial.content}</p>
                 </div>
-              )}
-
-              <div className="prose max-w-none">
-                <p className="text-sage-600 whitespace-pre-wrap">{tutorial.content}</p>
               </div>
             </div>
           </div>
