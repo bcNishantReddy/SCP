@@ -35,7 +35,7 @@ const App = () => {
           <Route path="/auth/signin" element={<SignIn />} />
           <Route path="/auth/signup" element={<SignUp />} />
 
-          {/* Redirect root to feed if authenticated, otherwise to signin */}
+          {/* Protected routes */}
           <Route
             path="/"
             element={
@@ -45,7 +45,6 @@ const App = () => {
             }
           />
 
-          {/* Protected routes */}
           <Route
             path="/feed"
             element={
@@ -54,6 +53,7 @@ const App = () => {
               </AuthGuard>
             }
           />
+
           <Route
             path="/projects"
             element={
@@ -64,22 +64,6 @@ const App = () => {
           />
           <Route
             path="/projects/:id"
-            element={
-              <AuthGuard>
-                <ProjectDetails />
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/projects/:id/edit"
-            element={
-              <AuthGuard>
-                <ProjectDetails />
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/projects/:id/team"
             element={
               <AuthGuard>
                 <ProjectDetails />
