@@ -91,6 +91,12 @@ export function CreateGroupModal() {
     }
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setBannerFile(e.target.files[0])
+    }
+  }
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -131,7 +137,7 @@ export function CreateGroupModal() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => setBannerFile(e.files?.[0] || null)}
+                onChange={handleFileChange}
               />
             </div>
           </div>
