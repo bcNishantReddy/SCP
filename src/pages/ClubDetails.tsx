@@ -53,21 +53,22 @@ const ClubDetails = () => {
 
       if (error) throw error;
 
-      // Fetch user's memberships
+      // Fetch user's memberships - using maybeSingle() instead of single()
       const { data: membership, error: membershipError } = await supabase
         .from('group_members')
         .select('user_id')
         .eq('group_id', id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      const isMember = !membershipError && membership;
+      // Handle the case where user is not a member
+      const isMember = !membershipError && membership !== null;
       const isCreator = club.creator_id === user.id;
       setIsPublic(!club.is_private);
 
       return { 
         ...club, 
-        isMember: !!isMember,
+        isMember,
         isCreator,
         posts: club.group_posts || [],
         _count: {
