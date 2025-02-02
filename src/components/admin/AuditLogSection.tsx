@@ -19,9 +19,9 @@ export const AuditLogSection = () => {
         .from("admin_actions")
         .select(`
           *,
-          profiles:admin_id (
-            name,
-            email
+          admin:admin_id (
+            email,
+            name
           )
         `)
         .order("created_at", { ascending: false })
@@ -71,7 +71,7 @@ export const AuditLogSection = () => {
           <TableBody>
             {auditLogs?.map((log) => (
               <TableRow key={log.id}>
-                <TableCell>{log.profiles?.name}</TableCell>
+                <TableCell>{log.admin?.name}</TableCell>
                 <TableCell className="capitalize">
                   {log.action_type.replace(/_/g, " ")}
                 </TableCell>
