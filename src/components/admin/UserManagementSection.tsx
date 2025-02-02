@@ -79,12 +79,16 @@ export const UserManagementSection = () => {
         throw new Error("Unauthorized: User is not an admin");
       }
 
-      const { error } = await supabase
+      // Update the user's role
+      const { error: updateError } = await supabase
         .from("profiles")
-        .update({ role })
+        .update({ role: role || "student" }) // Set default role to student if none provided
         .eq("id", userId);
 
-      if (error) throw error;
+      if (updateError) {
+        console.error("Error updating role:", updateError);
+        throw updateError;
+      }
 
       // Log admin action
       const { error: logError } = await supabase
@@ -213,10 +217,12 @@ export const UserManagementSection = () => {
                       <AlertDialogTrigger asChild>
                         <Select
                           value={selectedRole[user.id] || user.role}
-                          onValueChange={(value) => setSelectedRole({ 
-                            ...selectedRole, 
-                            [user.id]: value as UserRole 
-                          })}
+                          onValueChange={(value: UserRole) => {
+                            setSelectedRole({ 
+                              ...selectedRole, 
+                              [user.id]: value 
+                            });
+                          }}
                         >
                           <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select role" />
