@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Plus, Users, MessageSquare } from "lucide-react";
+import { ArrowLeft, Send, Plus, Users, MessageSquare, Image } from "lucide-react";
+import { CreatePost } from "@/components/feed/CreatePost";
 
 const ClubDetails = () => {
   const { id } = useParams();
@@ -17,6 +18,7 @@ const ClubDetails = () => {
   const [newDiscussion, setNewDiscussion] = useState({ title: "", description: "" });
   const [newMessage, setNewMessage] = useState("");
   const [selectedDiscussion, setSelectedDiscussion] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
 
   // Fetch club details, discussions, and messages
   const { data: clubData } = useQuery({
@@ -36,7 +38,14 @@ const ClubDetails = () => {
             title,
             description,
             created_at,
-            creator:profiles(name)
+            creator:profiles(name, avatar_url)
+          ),
+          posts(
+            id,
+            content,
+            image_url,
+            created_at,
+            user:profiles(name, avatar_url)
           )
         `)
         .eq('id', id)
@@ -46,81 +55,129 @@ const ClubDetails = () => {
 
       const isMember = club.members.some((m: any) => m.user_id === user.id);
       const isCreator = club.creator_id === user.id;
+      setIsPublic(!club.is_private);
 
       return { ...club, isMember, isCreator };
     },
   });
 
-  // Fetch messages for selected discussion
-  const { data: messages } = useQuery({
-    queryKey: ['messages', selectedDiscussion],
-    queryFn: async () => {
-      if (!selectedDiscussion) return [];
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!id) return;
 
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:profiles(name, avatar_url)
-        `)
-        .eq('discussion_id', selectedDiscussion)
-        .order('created_at', { ascending: true });
+    const channel = supabase
+      .channel('group-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `group_id=eq.${id}`,
+        },
+        (payload) => {
+          console.log('New message:', payload);
+          queryClient.invalidateQueries({ queryKey: ['messages', selectedDiscussion] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts',
+          filter: `group_id=eq.${id}`,
+        },
+        (payload) => {
+          console.log('New post:', payload);
+          queryClient.invalidateQueries({ queryKey: ['club', id] });
+        }
+      )
+      .subscribe();
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedDiscussion,
-  });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, queryClient, selectedDiscussion]);
 
-  // Create new discussion
-  const createDiscussion = useMutation({
+  // Toggle group privacy
+  const togglePrivacy = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from('discussions')
-        .insert([{
-          group_id: id,
-          creator_id: user.id,
-          title: newDiscussion.title,
-          description: newDiscussion.description
-        }])
-        .select()
-        .single();
+      const { error } = await supabase
+        .from('groups')
+        .update({ is_private: !isPublic })
+        .eq('id', id);
 
       if (error) throw error;
-      return data;
+      setIsPublic(!isPublic);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['club', id] });
-      setNewDiscussion({ title: "", description: "" });
       toast({
         title: "Success",
-        description: "Discussion created successfully",
+        description: `Group is now ${isPublic ? 'private' : 'public'}`,
       });
+      queryClient.invalidateQueries({ queryKey: ['club', id] });
     },
   });
 
-  // Send message
-  const sendMessage = useMutation({
-    mutationFn: async () => {
+  // Handle join requests
+  const handleJoinRequest = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('group_members')
+        .insert([{ group_id: id, user_id: userId }]);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Member added to the group",
+      });
+      queryClient.invalidateQueries({ queryKey: ['club', id] });
+    },
+  });
+
+  // Create new post in group
+  const createPost = useMutation({
+    mutationFn: async ({ content, imageFile }: { content: string; imageFile: File | null }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      let image_url = null;
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('files')
+          .upload(filePath, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('files')
+          .getPublicUrl(filePath);
+
+        image_url = publicUrl;
+      }
+
       const { error } = await supabase
-        .from('messages')
+        .from('posts')
         .insert([{
-          discussion_id: selectedDiscussion,
+          content,
+          image_url,
           user_id: user.id,
-          content: newMessage
+          group_id: id
         }]);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages', selectedDiscussion] });
-      setNewMessage("");
+      queryClient.invalidateQueries({ queryKey: ['club', id] });
+      toast({
+        title: "Success",
+        description: "Post created successfully",
+      });
     },
   });
 
@@ -130,7 +187,7 @@ const ClubDetails = () => {
     <div className="min-h-screen bg-sage-50">
       <Navbar />
       <main className="container mx-auto px-4 pt-20">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"
             className="mb-6"
@@ -141,98 +198,57 @@ const ClubDetails = () => {
           </Button>
 
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h1 className="text-2xl font-bold text-sage-800 mb-2">{clubData.name}</h1>
+            <div className="flex justify-between items-center mb-4">
+              <h1 className="text-2xl font-bold text-sage-800">{clubData.name}</h1>
+              {clubData.isCreator && (
+                <Button
+                  onClick={() => togglePrivacy.mutate()}
+                  variant="outline"
+                >
+                  {isPublic ? 'Make Private' : 'Make Public'}
+                </Button>
+              )}
+            </div>
             <p className="text-sage-600 mb-4">{clubData.description}</p>
             
-            {clubData.isCreator && !selectedDiscussion && (
-              <div className="space-y-4 mb-6 border-t pt-4">
-                <h2 className="text-lg font-semibold">Create New Discussion</h2>
-                <Input
-                  placeholder="Discussion Title"
-                  value={newDiscussion.title}
-                  onChange={(e) => setNewDiscussion(prev => ({ ...prev, title: e.target.value }))}
-                />
-                <Textarea
-                  placeholder="Discussion Description"
-                  value={newDiscussion.description}
-                  onChange={(e) => setNewDiscussion(prev => ({ ...prev, description: e.target.value }))}
-                />
-                <Button
-                  onClick={() => createDiscussion.mutate()}
-                  disabled={createDiscussion.isPending}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Discussion
-                </Button>
-              </div>
-            )}
-
-            {selectedDiscussion ? (
-              <div className="space-y-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setSelectedDiscussion(null)}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Discussions
-                </Button>
-
-                <div className="h-[400px] overflow-y-auto border rounded-lg p-4 space-y-4">
-                  {messages?.map((message) => (
-                    <div key={message.id} className="flex space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-sage-200">
-                          {message.sender.avatar_url && (
-                            <img
-                              src={message.sender.avatar_url}
-                              alt={message.sender.name}
-                              className="h-full w-full rounded-full"
-                            />
-                          )}
+            {(clubData.isMember || clubData.isCreator) && (
+              <div className="space-y-6">
+                <div className="border-t pt-6">
+                  <h2 className="text-lg font-semibold mb-4">Group Feed</h2>
+                  <CreatePost groupId={id} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['club', id] })} />
+                  
+                  <div className="space-y-4 mt-6">
+                    {clubData.posts?.map((post: any) => (
+                      <div key={post.id} className="bg-white rounded-lg shadow-sm p-4">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="h-8 w-8 rounded-full bg-sage-200 overflow-hidden">
+                            {post.user.avatar_url && (
+                              <img
+                                src={post.user.avatar_url}
+                                alt={post.user.name}
+                                className="h-full w-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold">{post.user.name}</p>
+                            <p className="text-sm text-sage-500">
+                              {new Date(post.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
+                        <p className="text-sage-800">{post.content}</p>
+                        {post.image_url && (
+                          <img
+                            src={post.image_url}
+                            alt="Post attachment"
+                            className="mt-2 rounded-lg max-h-96 w-full object-cover"
+                          />
+                        )}
                       </div>
-                      <div>
-                        <p className="font-semibold text-sm">{message.sender.name}</p>
-                        <p className="text-sage-600">{message.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Type your message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && newMessage.trim()) {
-                        sendMessage.mutate();
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={() => sendMessage.mutate()}
-                    disabled={!newMessage.trim() || sendMessage.isPending}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {clubData.discussions?.map((discussion: any) => (
-                  <div
-                    key={discussion.id}
-                    className="border rounded-lg p-4 hover:bg-sage-50 cursor-pointer"
-                    onClick={() => setSelectedDiscussion(discussion.id)}
-                  >
-                    <h3 className="font-semibold">{discussion.title}</h3>
-                    <p className="text-sm text-sage-600">{discussion.description}</p>
-                    <div className="text-xs text-sage-500 mt-2">
-                      Created by {discussion.creator.name}
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             )}
           </div>

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Users, MessageSquare } from "lucide-react";
+import { Users, MessageSquare, Lock, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,18 +32,28 @@ export function ClubCard({ club, isMember, isCreator }: ClubCardProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
-        .from('group_join_requests')
-        .insert([
-          { group_id: club.id, user_id: user.id }
-        ]);
+      if (club.is_private) {
+        const { error } = await supabase
+          .from('group_join_requests')
+          .insert([
+            { group_id: club.id, user_id: user.id }
+          ]);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('group_members')
+          .insert([
+            { group_id: club.id, user_id: user.id }
+          ]);
+
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Join request sent successfully",
+        description: club.is_private ? "Join request sent successfully" : "Joined group successfully",
       });
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
     },
@@ -63,7 +73,14 @@ export function ClubCard({ club, isMember, isCreator }: ClubCardProps) {
         style={club.banner_url ? { backgroundImage: `url(${club.banner_url})` } : undefined}
       />
       <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{club.name}</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-lg">{club.name}</h3>
+          {club.is_private ? (
+            <Lock className="h-4 w-4 text-sage-500" />
+          ) : (
+            <Globe className="h-4 w-4 text-sage-500" />
+          )}
+        </div>
         <p className="text-sage-600 text-sm mb-4 line-clamp-2">
           {club.description}
         </p>
@@ -89,7 +106,7 @@ export function ClubCard({ club, isMember, isCreator }: ClubCardProps) {
             className="w-full bg-sage-600 hover:bg-sage-700"
             onClick={() => navigate(`/clubs/${club.id}`)}
           >
-            View Discussions
+            View Group
           </Button>
         ) : (
           <Button 
@@ -98,7 +115,7 @@ export function ClubCard({ club, isMember, isCreator }: ClubCardProps) {
             onClick={() => joinRequest.mutate()}
             disabled={joinRequest.isPending}
           >
-            Request to Join
+            {club.is_private ? 'Request to Join' : 'Join Group'}
           </Button>
         )}
       </div>

@@ -9,7 +9,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
-export function CreatePost() {
+interface CreatePostProps {
+  groupId?: string;
+  onSuccess?: () => void;
+}
+
+export function CreatePost({ groupId, onSuccess }: CreatePostProps) {
   const [newPost, setNewPost] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -49,7 +54,8 @@ export function CreatePost() {
         .insert([{ 
           content: contentWithLinks, 
           user_id: user.id,
-          image_url
+          image_url,
+          group_id: groupId
         }])
         .select()
         .single();
@@ -59,6 +65,9 @@ export function CreatePost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      if (groupId) {
+        queryClient.invalidateQueries({ queryKey: ['club', groupId] });
+      }
       setNewPost("");
       setSelectedImage(null);
       setPreviewUrl(null);
@@ -66,6 +75,7 @@ export function CreatePost() {
         title: "Success",
         description: "Post created successfully",
       });
+      onSuccess?.();
     },
     onError: (error: Error) => {
       toast({
