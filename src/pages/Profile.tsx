@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Edit, Mail, Link2, MapPin, Building2, Calendar } from "lucide-react";
@@ -11,23 +11,34 @@ import { ProjectCard } from "@/components/projects/ProjectCard";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { id } = useParams(); // Get the ID from URL if viewing another user's profile
+  const [currentUserId, setCurrentUserId] = useState<string>();
 
-  // Fetch current user's profile data
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id);
+    };
+    getCurrentUser();
+  }, []);
+
+  // Fetch profile data
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile'],
+    queryKey: ['profile', id || currentUserId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user && !id) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('id', user.id)
+        .select('*, portfolios(*), projects(*)')
+        .eq('id', id || user?.id)
         .single();
 
       if (error) throw error;
       return data;
     },
+    enabled: !!currentUserId || !!id
   });
 
   // Fetch user's portfolios
@@ -92,6 +103,20 @@ const Profile = () => {
           className="h-32 md:h-64 bg-sage-200 transition-all duration-300 bg-cover bg-center"
           style={profile?.banner_url ? { backgroundImage: `url(${profile.banner_url})` } : {}}
         />
+
+        {/* Back Button (when viewing other's profile) */}
+        {!isOwnProfile && (
+          <div className="container mx-auto px-4 py-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              className="mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          </div>
+        )}
 
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">

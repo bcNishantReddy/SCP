@@ -193,53 +193,37 @@ const ProjectDetails = () => {
             memberCount={memberCount}
           />
 
-          <div className="flex justify-end gap-2 mb-6">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate(`/projects/${id}`)}
-              className="hover:bg-secondary"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              View Details
-            </Button>
-            {!isOwner && !hasRequestedToJoin && (isRejected || !joinRequests?.some(
-              request => request.user_id === currentUserId
-            )) && (
-              <Button 
-                onClick={() => handleJoinRequest.mutate()} 
-                size="sm"
-                className="bg-emerald-500 hover:bg-emerald-600"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Request to Join
-              </Button>
-            )}
-            {hasRequestedToJoin && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                disabled
-              >
-                Request Pending
-              </Button>
-            )}
+          <div className="space-y-6 mb-6">
+            {/* Description Section */}
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Description</h2>
+              <p className="text-gray-700 whitespace-pre-wrap">{project.description}</p>
+            </Card>
+
+            {/* Details Section */}
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Details</h2>
+              <div className="space-y-4">
+                <p className="text-gray-700 whitespace-pre-wrap">{project.details}</p>
+                {project.detail_images?.map((image: string, index: number) => (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={`Project detail ${index + 1}`}
+                    className="rounded-lg max-h-96 w-full object-cover"
+                  />
+                ))}
+              </div>
+            </Card>
+
+            <TeamSection 
+              projectId={id!}
+              isOwner={isOwner}
+              owner={project.owner}
+              approvedRequests={approvedRequests}
+              pendingRequests={pendingRequests}
+            />
           </div>
-
-          <TeamSection 
-            projectId={id!}
-            isOwner={isOwner}
-            owner={project.owner}
-            approvedRequests={approvedRequests}
-            pendingRequests={pendingRequests}
-          />
-
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Project Details</h2>
-            <div className="text-sm text-muted-foreground">
-              Created on {format(new Date(project.created_at), 'MMM d, yyyy')}
-            </div>
-          </Card>
         </div>
       </main>
     </div>

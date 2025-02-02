@@ -16,7 +16,14 @@ import SignUp from "@/pages/auth/SignUp";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { OpportunityDetails } from "@/components/opportunities/OpportunityDetails";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => {
   return (
@@ -136,6 +143,14 @@ const App = () => {
           />
           <Route
             path="/profile"
+            element={
+              <AuthGuard>
+                <Profile />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/profile/:id"
             element={
               <AuthGuard>
                 <Profile />

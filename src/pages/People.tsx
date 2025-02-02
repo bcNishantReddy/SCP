@@ -16,12 +16,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const People = () => {
   const [search, setSearch] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Fetch all profiles
   const { data: profiles, isLoading } = useQuery({
@@ -70,6 +72,10 @@ const People = () => {
       title: "Coming Soon",
       description: "This feature will be available soon!",
     });
+  };
+
+  const handleProfile = (profile: any) => {
+    navigate(`/profile/${profile.id}`);
   };
 
   if (isLoading) {
@@ -159,10 +165,10 @@ const People = () => {
                       variant="outline"
                       size="sm"
                       className="text-sage-600"
-                      onClick={() => handlePortfolio(profile)}
+                      onClick={() => handleProfile(profile)}
                     >
                       <Link2 className="h-4 w-4 mr-2" />
-                      Portfolio
+                      Profile
                     </Button>
                   </div>
                 </div>
