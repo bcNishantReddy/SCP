@@ -33,52 +33,101 @@ export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      throw new Error("Name is required");
+    }
+    if (!formData.email.trim()) {
+      throw new Error("Email is required");
+    }
+    if (!formData.password || formData.password.length < 6) {
+      throw new Error("Password must be at least 6 characters long");
+    }
+    if (!formData.role) {
+      throw new Error("Please select a role");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      console.log("Attempting signup with:", { 
+      // Validate form
+      validateForm();
+
+      console.log("Starting signup process for:", { 
         email: formData.email.trim(),
         role: formData.role 
       });
 
-      // First check if email already exists
-      const { data: existingUser } = await supabase
+      // First check if email already exists in profiles
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', formData.email.trim())
         .maybeSingle();
 
-      if (existingUser) {
+      if (profileError) {
+        console.error("Profile check error:", profileError);
+        throw new Error("Error checking existing profile");
+      }
+
+      if (existingProfile) {
         throw new Error("An account with this email already exists");
       }
 
+      // Attempt signup
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
         options: {
           data: {
-            name: formData.name,
+            name: formData.name.trim(),
             role: formData.role,
           },
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Signup error:", error);
+        throw error;
+      }
 
-      console.log("Signup successful:", data);
+      if (!data.user) {
+        throw new Error("No user data returned from signup");
+      }
+
+      console.log("Signup successful:", data.user);
 
       toast({
         title: "Registration Successful!",
         description: "Please wait for admin approval to access your account.",
       });
+      
+      // Sign out the user since they need approval
+      await supabase.auth.signOut();
       navigate("/auth/pending");
     } catch (error: any) {
-      console.error("Signup error:", error);
+      console.error("Signup process error:", error);
+      
+      let errorMessage = "An error occurred during signup.";
+      
+      if (error.message.includes("duplicate key")) {
+        errorMessage = "An account with this email already exists.";
+      } else if (error.message.includes("Password")) {
+        errorMessage = error.message;
+      } else if (error.message.includes("valid email")) {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error.message.includes("role")) {
+        errorMessage = "Please select a valid role.";
+      } else {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Something went wrong during signup.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
