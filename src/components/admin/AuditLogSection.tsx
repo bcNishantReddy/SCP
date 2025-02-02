@@ -20,7 +20,7 @@ export const AuditLogSection = () => {
         .from("admin_actions")
         .select(`
           *,
-          profiles!admin_actions_admin_id_fkey (
+          profiles (
             email,
             name
           )
