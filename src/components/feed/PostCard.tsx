@@ -47,6 +47,7 @@ export function PostCard({ post }: PostCardProps) {
 
   // Check if post is within 5-minute edit window
   const checkEditWindow = async () => {
+    console.log("Checking edit window for post:", post.id);
     const { data, error } = await supabase
       .rpc('is_post_editable', { post_created_at: post.created_at });
     
@@ -54,11 +55,13 @@ export function PostCard({ post }: PostCardProps) {
       console.error('Error checking edit window:', error);
       return false;
     }
+    console.log("Edit window result:", data);
     return data;
   };
 
   const deletePost = useMutation({
     mutationFn: async () => {
+      console.log("Deleting post:", post.id);
       // Delete post likes first
       const { error: likesError } = await supabase
         .from('post_likes')
@@ -76,6 +79,7 @@ export function PostCard({ post }: PostCardProps) {
       if (error) throw error;
     },
     onSuccess: () => {
+      console.log("Post deleted successfully");
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       toast({
         title: "Success",
@@ -83,6 +87,7 @@ export function PostCard({ post }: PostCardProps) {
       });
     },
     onError: (error: Error) => {
+      console.error("Error deleting post:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -93,6 +98,7 @@ export function PostCard({ post }: PostCardProps) {
 
   const updatePost = useMutation({
     mutationFn: async () => {
+      console.log("Updating post:", post.id);
       const isEditable = await checkEditWindow();
       if (!isEditable) {
         throw new Error("Posts can only be edited within 5 minutes of creation");
@@ -100,12 +106,16 @@ export function PostCard({ post }: PostCardProps) {
 
       const { error } = await supabase
         .from('posts')
-        .update({ content: editedContent })
+        .update({ 
+          content: editedContent,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', post.id);
 
       if (error) throw error;
     },
     onSuccess: () => {
+      console.log("Post updated successfully");
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       toast({
@@ -114,6 +124,7 @@ export function PostCard({ post }: PostCardProps) {
       });
     },
     onError: (error: Error) => {
+      console.error("Error updating post:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -124,6 +135,7 @@ export function PostCard({ post }: PostCardProps) {
 
   const toggleLike = useMutation({
     mutationFn: async ({ postId, hasLiked }: ToggleLikeParams) => {
+      console.log("Toggling like for post:", postId, "current state:", hasLiked);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -160,9 +172,11 @@ export function PostCard({ post }: PostCardProps) {
       }
     },
     onSuccess: () => {
+      console.log("Like toggled successfully");
       queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
     onError: (error: Error) => {
+      console.error("Error toggling like:", error);
       toast({
         title: "Error",
         description: error.message,
