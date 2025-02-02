@@ -3,7 +3,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Mail, Star, Link2, AlertCircle } from "lucide-react";
+import { Search, Mail, Link2, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -33,8 +33,7 @@ const People = () => {
         .from("profiles")
         .select(`
           *,
-          portfolios (id),
-          contacts (primary_email)
+          portfolios (id)
         `);
 
       if (error) throw error;
@@ -44,38 +43,17 @@ const People = () => {
 
   const filteredProfiles = profiles?.filter(
     (profile) =>
-      profile.name.toLowerCase().includes(search.toLowerCase()) ||
+      profile.name?.toLowerCase().includes(search.toLowerCase()) ||
       profile.role?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleContact = async (profile: any) => {
-    if (!profile.contacts?.[0]?.primary_email) {
+    if (!profile.email) {
       setAlertMessage("This user hasn't added their contact information yet.");
       setShowAlert(true);
       return;
     }
-    window.location.href = `mailto:${profile.contacts[0].primary_email}`;
-  };
-
-  const handlePortfolio = (profile: any) => {
-    if (!profile.portfolios?.[0]?.id) {
-      setAlertMessage("This user hasn't uploaded their portfolio yet.");
-      setShowAlert(true);
-      return;
-    }
-    // Navigate to portfolio page
-    window.location.href = `/portfolios/${profile.portfolios[0].id}`;
-  };
-
-  const handleStar = (profile: any) => {
-    toast({
-      title: "Coming Soon",
-      description: "This feature will be available soon!",
-    });
-  };
-
-  const handleProfile = (profile: any) => {
-    navigate(`/profile/${profile.id}`);
+    window.location.href = `mailto:${profile.email}`;
   };
 
   if (isLoading) {
@@ -151,15 +129,6 @@ const People = () => {
                     >
                       <Mail className="h-4 w-4 mr-2" />
                       Contact
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-sage-600"
-                      onClick={() => handleStar(profile)}
-                    >
-                      <Star className="h-4 w-4 mr-2" />
-                      Star
                     </Button>
                     <Button
                       variant="outline"
