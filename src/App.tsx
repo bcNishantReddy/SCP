@@ -15,6 +15,7 @@ import SignIn from "@/pages/auth/SignIn";
 import SignUp from "@/pages/auth/SignUp";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { OpportunityDetails } from "@/components/opportunities/OpportunityDetails";
+import AdminDashboard from "@/pages/AdminDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -162,6 +163,14 @@ const App = () => {
             element={
               <AuthGuard>
                 <Tutorials />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AuthGuard>
+                <AdminDashboard />
               </AuthGuard>
             }
           />

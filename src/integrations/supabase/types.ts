@@ -53,6 +53,71 @@ export type Database = {
           },
         ]
       }
+      bulk_upload_errors: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          row_number: number | null
+          upload_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          row_number?: number | null
+          upload_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          row_number?: number | null
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_upload_errors_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "bulk_user_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bulk_user_uploads: {
+        Row: {
+          admin_id: string
+          created_at: string | null
+          failed_count: number | null
+          file_name: string
+          id: string
+          processed_count: number | null
+          status: Database["public"]["Enums"]["upload_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string | null
+          failed_count?: number | null
+          file_name: string
+          id?: string
+          processed_count?: number | null
+          status?: Database["public"]["Enums"]["upload_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string | null
+          failed_count?: number | null
+          file_name?: string
+          id?: string
+          processed_count?: number | null
+          status?: Database["public"]["Enums"]["upload_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -833,8 +898,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_user_upload: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_name: string
+          p_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: string
+      }
     }
     Enums: {
+      upload_status: "pending" | "processed" | "failed"
       user_role: "admin" | "student" | "faculty" | "investor" | "alumni"
     }
     CompositeTypes: {

@@ -11,7 +11,8 @@ import {
   Bell,
   User,
   Menu,
-  LogOut
+  LogOut,
+  Settings
 } from "lucide-react";
 import {
   Sheet,
@@ -23,11 +24,29 @@ import {
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const handleLogout = async () => {
     try {
@@ -47,6 +66,8 @@ const Navbar = () => {
     }
   };
 
+  const isAdmin = profile?.role === 'admin';
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-sage-200">
       <div className="container mx-auto px-4">
@@ -64,6 +85,9 @@ const Navbar = () => {
               <NavLink to="/groups" icon={<Users size={18} />} label="Groups" />
               <NavLink to="/portfolios" icon={<FileText size={18} />} label="Portfolios" />
               <NavLink to="/tutorials" icon={<BookOpen size={18} />} label="Tutorials" />
+              {isAdmin && (
+                <NavLink to="/admin" icon={<Settings size={18} />} label="Admin" />
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -98,6 +122,9 @@ const Navbar = () => {
                   <MobileNavLink to="/groups" icon={<Users size={18} />} label="Groups" />
                   <MobileNavLink to="/portfolios" icon={<FileText size={18} />} label="Portfolios" />
                   <MobileNavLink to="/tutorials" icon={<BookOpen size={18} />} label="Tutorials" />
+                  {isAdmin && (
+                    <MobileNavLink to="/admin" icon={<Settings size={18} />} label="Admin" />
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
