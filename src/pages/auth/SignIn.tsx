@@ -20,22 +20,38 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
+      console.log("Attempting sign in with:", { email });
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Sign in error:", error);
+        let errorMessage = "Invalid credentials. Please check your email and password.";
+        
+        if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email address before signing in.";
+        }
+        
+        throw new Error(errorMessage);
+      }
 
+      if (!data.user || !data.session) {
+        throw new Error("No user data returned from authentication");
+      }
+
+      console.log("Sign in successful:", data.user);
       toast({
         title: "Success!",
         description: "You have successfully signed in.",
       });
       navigate("/feed");
     } catch (error: any) {
+      console.error("Sign in process error:", error);
       toast({
         title: "Error",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: error.message || "An error occurred during sign in. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -79,6 +95,7 @@ export default function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
             </div>
           </div>
