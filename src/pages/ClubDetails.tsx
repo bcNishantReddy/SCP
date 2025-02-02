@@ -32,8 +32,8 @@ const ClubDetails = () => {
         .from('groups')
         .select(`
           *,
-          members:group_members(user_id),
-          discussions(
+          members:group_members(count),
+          discussions:discussions(
             id,
             title,
             description,
@@ -53,15 +53,27 @@ const ClubDetails = () => {
 
       if (error) throw error;
 
-      const isMember = club.members.some((m: any) => m.user_id === user.id);
+      // Fetch user's memberships
+      const { data: membership, error: membershipError } = await supabase
+        .from('group_members')
+        .select('user_id')
+        .eq('group_id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      const isMember = !membershipError && membership;
       const isCreator = club.creator_id === user.id;
       setIsPublic(!club.is_private);
 
       return { 
         ...club, 
-        isMember, 
+        isMember: !!isMember,
         isCreator,
-        posts: club.group_posts || [] // Ensure posts is always an array
+        posts: club.group_posts || [],
+        _count: {
+          members: club.members?.[0]?.count || 0,
+          discussions: club.discussions?.length || 0
+        }
       };
     },
   });
@@ -139,49 +151,6 @@ const ClubDetails = () => {
         description: "Member added to the group",
       });
       queryClient.invalidateQueries({ queryKey: ['club', id] });
-    },
-  });
-
-  // Create new post in group
-  const createPost = useMutation({
-    mutationFn: async ({ content, imageFile }: { content: string; imageFile: File | null }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      let image_url = null;
-      if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const filePath = `${crypto.randomUUID()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('files')
-          .upload(filePath, imageFile);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('files')
-          .getPublicUrl(filePath);
-
-        image_url = publicUrl;
-      }
-
-      const { error } = await supabase
-        .from('posts')
-        .insert([{
-          content,
-          image_url,
-          user_id: user.id,
-          group_id: id
-        }]);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['club', id] });
-      toast({
-        title: "Success",
-        description: "Post created successfully",
-      });
     },
   });
 

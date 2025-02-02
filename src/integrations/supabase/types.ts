@@ -798,6 +798,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          group_id: string | null
           id: string
           image_url: string | null
           likes_count: number | null
@@ -807,6 +808,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
+          group_id?: string | null
           id?: string
           image_url?: string | null
           likes_count?: number | null
@@ -816,6 +818,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          group_id?: string | null
           id?: string
           image_url?: string | null
           likes_count?: number | null
@@ -823,6 +826,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_user_id_fkey"
             columns: ["user_id"]
