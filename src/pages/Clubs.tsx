@@ -10,7 +10,14 @@ import { ClubCard } from "@/components/clubs/ClubCard";
 
 const Clubs = () => {
   const [search, setSearch] = useState("");
-  const { data: currentUser } = await supabase.auth.getUser();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    }
+  });
 
   const { data: clubs, isLoading } = useQuery({
     queryKey: ['clubs'],
