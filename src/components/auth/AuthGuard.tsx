@@ -17,9 +17,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         console.log("Checking auth session:", session);
         
+        if (sessionError) {
+          throw sessionError;
+        }
+
         if (!session) {
           if (!location.pathname.includes('/auth/')) {
             console.log("No session found, redirecting to signin");
@@ -27,17 +31,40 @@ export function AuthGuard({ children }: AuthGuardProps) {
           }
           setIsAuthenticated(false);
         } else {
+          // Attempt to refresh the session if it's close to expiring
+          const expiresAt = session?.expires_at ?? 0;
+          const timeNow = Math.floor(Date.now() / 1000);
+          
+          if (expiresAt - timeNow < 60) { // If session expires in less than 1 minute
+            console.log("Session about to expire, refreshing...");
+            const { data: { session: refreshedSession }, error: refreshError } = 
+              await supabase.auth.refreshSession();
+              
+            if (refreshError) {
+              throw refreshError;
+            }
+            
+            if (!refreshedSession) {
+              throw new Error("Failed to refresh session");
+            }
+          }
+          
           setIsAuthenticated(true);
         }
       } catch (error: any) {
         console.error("Auth error:", error);
         
-        if (error.message?.includes('refresh_token_not_found')) {
+        // Handle specific error cases
+        if (error.message?.includes('session_not_found') || 
+            error.message?.includes('refresh_token_not_found')) {
           toast({
             title: "Session Expired",
             description: "Please sign in again",
             variant: "destructive",
           });
+          
+          // Clear any existing session data
+          await supabase.auth.signOut();
         }
         
         if (!location.pathname.includes('/auth/')) {
@@ -57,7 +84,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
           setIsAuthenticated(false);
           if (!location.pathname.includes('/auth/')) {
             navigate("/auth/signin", { replace: true });
