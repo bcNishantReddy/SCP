@@ -40,7 +40,7 @@ const ClubDetails = () => {
             created_at,
             creator:profiles(name, avatar_url)
           ),
-          posts(
+          group_posts:posts(
             id,
             content,
             image_url,
@@ -57,11 +57,15 @@ const ClubDetails = () => {
       const isCreator = club.creator_id === user.id;
       setIsPublic(!club.is_private);
 
-      return { ...club, isMember, isCreator };
+      return { 
+        ...club, 
+        isMember, 
+        isCreator,
+        posts: club.group_posts || [] // Ensure posts is always an array
+      };
     },
   });
 
-  // Subscribe to real-time updates
   useEffect(() => {
     if (!id) return;
 
