@@ -16,15 +16,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          console.log("No session found, redirecting to signin");
-          navigate("/auth/signin");
-        } else if (location.pathname === "/" || location.pathname === "/auth/signin") {
+          // Only redirect to signin if not already there
+          if (!location.pathname.includes('/auth/')) {
+            console.log("No session found, redirecting to signin");
+            navigate("/auth/signin");
+          }
+        } else if (location.pathname.includes('/auth/')) {
+          // If authenticated and trying to access auth pages, redirect to feed
           console.log("User is authenticated, redirecting to feed");
           navigate("/feed");
         }
       } catch (error) {
         console.error("Auth error:", error);
-        navigate("/auth/signin");
+        if (!location.pathname.includes('/auth/')) {
+          navigate("/auth/signin");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -33,9 +39,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
-        if (!session) {
+        if (!session && !location.pathname.includes('/auth/')) {
           navigate("/auth/signin");
-        } else if (location.pathname === "/" || location.pathname === "/auth/signin") {
+        } else if (session && location.pathname.includes('/auth/')) {
           navigate("/feed");
         }
       }

@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit } from "lucide-react";
+import { Edit, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,8 @@ export function EditProfileModal() {
   const [bio, setBio] = useState("");
   const [location, setLocation] = useState("");
   const [website, setWebsite] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -44,7 +46,6 @@ export function EditProfileModal() {
       setBio(profile.bio || "");
     }
 
-    // Load social URLs
     const { data: socialUrls } = await supabase
       .from('social_urls')
       .select('*')
@@ -56,26 +57,54 @@ export function EditProfileModal() {
     }
   };
 
+  const uploadFile = async (file: File, path: string) => {
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${path}/${Math.random()}.${fileExt}`;
+
+    const { error: uploadError, data } = await supabase.storage
+      .from('files')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('files')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   const handleSave = async () => {
     try {
       setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Update profile
+      let avatarUrl;
+      let bannerUrl;
+
+      if (avatarFile) {
+        avatarUrl = await uploadFile(avatarFile, 'avatars');
+      }
+
+      if (bannerFile) {
+        bannerUrl = await uploadFile(bannerFile, 'banners');
+      }
+
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           name,
           title,
           bio,
+          avatar_url: avatarUrl || undefined,
+          banner_url: bannerUrl || undefined,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       if (profileError) throw profileError;
 
-      // Update or insert social URLs
       const { error: socialError } = await supabase
         .from('social_urls')
         .upsert({
@@ -126,6 +155,24 @@ export function EditProfileModal() {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="avatar">Profile Photo</Label>
+            <Input
+              id="avatar"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="banner">Banner Image</Label>
+            <Input
+              id="banner"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setBannerFile(e.target.files?.[0] || null)}
+            />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input 
