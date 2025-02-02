@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +17,7 @@ const TutorialDetails = () => {
       console.log("Fetching tutorial details...");
       const { data, error } = await supabase
         .from("tutorials")
-        .select("*")
+        .select("*, profile:profiles(name)")
         .eq("id", id)
         .single();
 
@@ -36,6 +36,12 @@ const TutorialDetails = () => {
     },
   });
 
+  const getYouTubeEmbedUrl = (url: string) => {
+    if (!url) return null;
+    const videoId = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+    return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : null;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-sage-50">
@@ -52,6 +58,31 @@ const TutorialDetails = () => {
     );
   }
 
+  if (!tutorial) {
+    return (
+      <div className="min-h-screen bg-sage-50">
+        <Navbar />
+        <main className="container mx-auto px-4 pt-20">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-sage-800">Tutorial not found</h1>
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/tutorials')}
+                className="mt-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Tutorials
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const embedUrl = getYouTubeEmbedUrl(tutorial.video_url);
+
   return (
     <div className="min-h-screen bg-sage-50">
       <Navbar />
@@ -59,28 +90,45 @@ const TutorialDetails = () => {
         <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"
-            className="mb-4"
-            onClick={() => navigate("/tutorials")}
+            onClick={() => navigate('/tutorials')}
+            className="mb-6"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Tutorials
           </Button>
 
-          <h1 className="text-3xl font-bold text-sage-800 mb-6">{tutorial?.title}</h1>
-
-          {tutorial?.video_url && (
-            <div className="relative aspect-video bg-sage-200 rounded-lg mb-6">
-              <Button
-                size="icon"
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
-              >
-                <Play className="h-6 w-6 text-sage-600" />
-              </Button>
+          {embedUrl && (
+            <div className="aspect-video w-full mb-8">
+              <iframe
+                src={embedUrl}
+                title={tutorial.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full rounded-lg shadow-lg"
+              />
             </div>
           )}
 
-          <div className="prose max-w-none">
-            <p className="text-sage-600">{tutorial?.content}</p>
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold text-sage-800">{tutorial.title}</h1>
+              
+              {tutorial.profile?.name && (
+                <p className="text-sage-600">
+                  Created by {tutorial.profile.name}
+                </p>
+              )}
+
+              {tutorial.category && (
+                <div className="inline-block bg-sage-100 text-sage-800 px-3 py-1 rounded-full text-sm">
+                  {tutorial.category}
+                </div>
+              )}
+
+              <div className="prose max-w-none">
+                <p className="text-sage-600 whitespace-pre-wrap">{tutorial.content}</p>
+              </div>
+            </div>
           </div>
         </div>
       </main>
