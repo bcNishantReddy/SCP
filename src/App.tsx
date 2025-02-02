@@ -10,9 +10,30 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/groups" element={<AuthGuard><Groups /></AuthGuard>} />
-      <Route path="/clubs" element={<AuthGuard><Clubs /></AuthGuard>} />
-      <Route path="/clubs/:id" element={<AuthGuard><GroupDetails /></AuthGuard>} />
+      <Route
+        path="/groups"
+        element={
+          <AuthGuard>
+            <Groups />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/clubs"
+        element={
+          <AuthGuard>
+            <Clubs />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/clubs/:id"
+        element={
+          <AuthGuard>
+            <GroupDetails />
+          </AuthGuard>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
