@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft, Play, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -69,18 +69,28 @@ const TutorialDetails = () => {
           <h1 className="text-3xl font-bold text-sage-800 mb-6">{tutorial?.title}</h1>
 
           {tutorial?.video_url && (
-            <div className="relative aspect-video bg-sage-200 rounded-lg mb-6">
+            <div className="space-y-4 mb-6">
+              <div className="relative aspect-video bg-sage-200 rounded-lg">
+                <iframe
+                  src={tutorial.video_url.replace('watch?v=', 'embed/')}
+                  className="absolute inset-0 w-full h-full rounded-lg"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
               <Button
-                size="icon"
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => window.open(tutorial.video_url, '_blank')}
               >
-                <Play className="h-6 w-6 text-sage-600" />
+                <ExternalLink className="h-4 w-4" />
+                Open in YouTube
               </Button>
             </div>
           )}
 
           <div className="prose max-w-none">
-            <p className="text-sage-600">{tutorial?.content}</p>
+            <p className="text-sage-600 whitespace-pre-wrap">{tutorial?.content}</p>
           </div>
         </div>
       </main>
