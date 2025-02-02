@@ -35,10 +35,16 @@ export function PostCard({ post }: PostCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Check if current user is the author
+  const isAuthor = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id === post.user_id;
+  };
+
   // Check if post is within 5-minute edit window
-  const isEditable = async () => {
+  const checkEditWindow = async () => {
     const { data, error } = await supabase
-      .rpc('is_post_editable', { post_created_at: post.created_at }) as { data: boolean, error: Error | null };
+      .rpc('is_post_editable', { post_created_at: post.created_at });
     
     if (error) {
       console.error('Error checking edit window:', error);
@@ -49,16 +55,9 @@ export function PostCard({ post }: PostCardProps) {
 
   const deletePost = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      if (user.id !== post.user_id) {
-        throw new Error("You can only delete your own posts");
-      }
-
-      const canEdit = await isEditable();
+      const canEdit = await isAuthor();
       if (!canEdit) {
-        throw new Error("Post can only be edited within 5 minutes of creation");
+        throw new Error("You can only delete your own posts");
       }
 
       const { error } = await supabase
@@ -86,16 +85,14 @@ export function PostCard({ post }: PostCardProps) {
 
   const updatePost = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      if (user.id !== post.user_id) {
+      const canEdit = await isAuthor();
+      if (!canEdit) {
         throw new Error("You can only edit your own posts");
       }
 
-      const canEdit = await isEditable();
-      if (!canEdit) {
-        throw new Error("Post can only be edited within 5 minutes of creation");
+      const isEditable = await checkEditWindow();
+      if (!isEditable) {
+        throw new Error("Posts can only be edited within 5 minutes of creation");
       }
 
       const { error } = await supabase
@@ -145,28 +142,18 @@ export function PostCard({ post }: PostCardProps) {
         if (error) throw error;
         return data;
       } else {
-        // Check if user already liked
-        const { data: existingLike } = await supabase
+        // Add new like
+        await supabase
           .from('post_likes')
-          .select()
-          .eq('post_id', postId)
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .insert([{ post_id: postId, user_id: user.id }]);
 
-        if (!existingLike) {
-          // Add new like
-          await supabase
-            .from('post_likes')
-            .insert([{ post_id: postId, user_id: user.id }]);
+        // Increment global count
+        const { data, error } = await supabase
+          .rpc('increment_likes', { post_id: postId })
+          .single();
 
-          // Increment global count
-          const { data, error } = await supabase
-            .rpc('increment_likes', { post_id: postId })
-            .single();
-
-          if (error) throw error;
-          return data;
-        }
+        if (error) throw error;
+        return data;
       }
     },
     onSuccess: () => {
@@ -204,26 +191,24 @@ export function PostCard({ post }: PostCardProps) {
             </p>
           </div>
         </div>
-        <div className="flex space-x-2">
-          {post.user_id === (supabase.auth.getUser() as any).data?.user?.id && (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => deletePost.mutate()}
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-        </div>
+        {post.user_id === (supabase.auth.getUser() as any).data?.user?.id && (
+          <div className="flex space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => deletePost.mutate()}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
       
       {isEditing ? (
