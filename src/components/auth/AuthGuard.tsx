@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -23,35 +25,51 @@ export function AuthGuard({ children }: AuthGuardProps) {
             console.log("No session found, redirecting to signin");
             navigate("/auth/signin", { replace: true });
           }
+          setIsAuthenticated(false);
         } else {
           setIsAuthenticated(true);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Auth error:", error);
+        
+        // Handle specific auth errors
+        if (error.message?.includes('refresh_token_not_found')) {
+          toast({
+            title: "Session Expired",
+            description: "Please sign in again",
+            variant: "destructive",
+          });
+        }
+        
         if (!location.pathname.includes('/auth/')) {
           navigate("/auth/signin", { replace: true });
         }
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
     };
 
+    // Initial auth check
+    checkAuth();
+
+    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
-        if (session) {
-          setIsAuthenticated(true);
-        } else {
+        
+        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
           setIsAuthenticated(false);
           if (!location.pathname.includes('/auth/')) {
             navigate("/auth/signin", { replace: true });
           }
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setIsAuthenticated(true);
         }
       }
     );
 
-    checkAuth();
-
+    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };
