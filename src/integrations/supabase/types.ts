@@ -248,51 +248,6 @@ export type Database = {
           },
         ]
       }
-      discussions: {
-        Row: {
-          created_at: string | null
-          creator_id: string
-          description: string | null
-          group_id: string
-          id: string
-          title: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          creator_id: string
-          description?: string | null
-          group_id: string
-          id?: string
-          title: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          creator_id?: string
-          description?: string | null
-          group_id?: string
-          id?: string
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "discussions_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "discussions_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       education: {
         Row: {
           created_at: string | null
@@ -455,48 +410,6 @@ export type Database = {
           },
         ]
       }
-      group_join_requests: {
-        Row: {
-          created_at: string | null
-          group_id: string
-          id: string
-          status: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          group_id: string
-          id?: string
-          status?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          group_id?: string
-          id?: string
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "group_join_requests_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "group_join_requests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       group_members: {
         Row: {
           created_at: string | null
@@ -540,7 +453,6 @@ export type Database = {
           creator_id: string
           description: string
           id: string
-          is_private: boolean | null
           name: string
           updated_at: string | null
         }
@@ -550,7 +462,6 @@ export type Database = {
           creator_id: string
           description: string
           id?: string
-          is_private?: boolean | null
           name: string
           updated_at?: string | null
         }
@@ -560,7 +471,6 @@ export type Database = {
           creator_id?: string
           description?: string
           id?: string
-          is_private?: boolean | null
           name?: string
           updated_at?: string | null
         }
@@ -568,58 +478,6 @@ export type Database = {
           {
             foreignKeyName: "groups_creator_id_fkey"
             columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      messages: {
-        Row: {
-          content: string
-          created_at: string | null
-          discussion_id: string | null
-          group_id: string | null
-          id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          discussion_id?: string | null
-          group_id?: string | null
-          id?: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          discussion_id?: string | null
-          group_id?: string | null
-          id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_discussion_id_fkey"
-            columns: ["discussion_id"]
-            isOneToOne: false
-            referencedRelation: "discussions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_user_id_fkey"
-            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
