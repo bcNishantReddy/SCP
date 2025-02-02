@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Users, Lock, Globe } from "lucide-react";
+import { Users, MessageSquare, Lock, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,9 +84,15 @@ export function ClubCard({ club, isMember, isCreator }: ClubCardProps) {
         <p className="text-sage-600 text-sm mb-4 line-clamp-2">
           {club.description}
         </p>
-        <div className="flex items-center space-x-2 text-sm text-sage-500 mb-4">
-          <Users className="h-4 w-4" />
-          <span>{club._count?.members || 0} members</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2 text-sm text-sage-500">
+            <Users className="h-4 w-4" />
+            <span>{club._count?.members || 0} members</span>
+          </div>
+          <div className="flex items-center space-x-2 text-sm text-sage-500">
+            <MessageSquare className="h-4 w-4" />
+            <span>{club._count?.discussions || 0} discussions</span>
+          </div>
         </div>
         {isCreator ? (
           <Button 
