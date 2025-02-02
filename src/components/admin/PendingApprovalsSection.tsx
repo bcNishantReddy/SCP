@@ -23,12 +23,36 @@ export const PendingApprovalsSection = () => {
 
   const approveUser = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
+      console.log("Approving user:", userId);
+      
+      // First update the user's approval status
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({ is_approved: true })
         .eq("id", userId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Then log the admin action
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      console.log("Logging admin action for user:", user.id);
+      
+      const { error: logError } = await supabase
+        .from("admin_actions")
+        .insert({
+          admin_id: user.id,
+          action_type: "approve_user",
+          target_table: "profiles",
+          target_id: userId,
+          details: { action: "approved_user" }
+        });
+
+      if (logError) {
+        console.error("Error logging admin action:", logError);
+        throw logError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingUsers"] });
@@ -38,6 +62,7 @@ export const PendingApprovalsSection = () => {
       });
     },
     onError: (error: any) => {
+      console.error("Error in approveUser mutation:", error);
       toast({
         title: "Error",
         description: error.message,
