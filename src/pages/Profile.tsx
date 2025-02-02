@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Edit, Mail, Link2, MapPin, Building2, Calendar } from "lucide-react";
+import { Edit, Mail, Link2, MapPin, Building2, Calendar, ArrowLeft } from "lucide-react";
 import { EditProfileModal } from "@/components/modals/EditProfileModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // Get the ID from URL if viewing another user's profile
   const [currentUserId, setCurrentUserId] = useState<string>();
+  const isOwnProfile = !id || id === currentUserId;
 
   useEffect(() => {
     const getCurrentUser = async () => {

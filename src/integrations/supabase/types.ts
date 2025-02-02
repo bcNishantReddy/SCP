@@ -674,6 +674,8 @@ export type Database = {
           category: string
           created_at: string | null
           description: string
+          detail_images: string[] | null
+          details: string | null
           id: string
           title: string
           updated_at: string | null
@@ -684,6 +686,8 @@ export type Database = {
           category: string
           created_at?: string | null
           description: string
+          detail_images?: string[] | null
+          details?: string | null
           id?: string
           title: string
           updated_at?: string | null
@@ -694,6 +698,8 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string
+          detail_images?: string[] | null
+          details?: string | null
           id?: string
           title?: string
           updated_at?: string | null

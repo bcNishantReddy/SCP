@@ -11,6 +11,23 @@ import { useEffect, useState } from "react";
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
 import { TeamSection } from "@/components/projects/TeamSection";
 
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  banner_url: string | null;
+  details: string | null;
+  detail_images: string[] | null;
+  user_id: string;
+  owner: {
+    id: string;
+    name: string;
+    title: string;
+    avatar_url: string;
+  };
+}
+
 const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -51,9 +68,9 @@ const ProjectDetails = () => {
         throw error;
       }
       console.log('Project data:', data);
-      return data;
+      return data as Project;
     },
-    enabled: !!id, // Only run query if id exists
+    enabled: !!id,
   });
 
   const { data: joinRequests } = useQuery({
@@ -82,7 +99,7 @@ const ProjectDetails = () => {
       console.log('Join requests:', data);
       return data;
     },
-    enabled: !!id, // Only run query if id exists
+    enabled: !!id,
   });
 
   const handleJoinRequest = useMutation({
