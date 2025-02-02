@@ -35,6 +35,8 @@ export function OpportunityDetails() {
   const { data: opportunity, isLoading } = useQuery({
     queryKey: ["opportunity", id],
     queryFn: async () => {
+      if (!id) throw new Error("No opportunity ID provided");
+      
       const { data, error } = await supabase
         .from("opportunities")
         .select(`
