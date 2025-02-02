@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -29,10 +28,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         if (!session) {
           if (!location.pathname.includes('/auth/')) {
             console.log("No session found, redirecting to signin");
-            navigate("/auth/signin", { 
-              replace: true,
-              state: { from: location.pathname }  // Save the attempted path
-            });
+            navigate("/auth/signin", { replace: true });
           }
           setIsAuthenticated(false);
           return;
@@ -96,10 +92,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
         
         if (!location.pathname.includes('/auth/')) {
-          navigate("/auth/signin", { 
-            replace: true,
-            state: { from: location.pathname }
-          });
+          navigate("/auth/signin", { replace: true });
         }
       } finally {
         setIsLoading(false);
@@ -115,10 +108,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
           if (!location.pathname.includes('/auth/')) {
-            navigate("/auth/signin", { 
-              replace: true,
-              state: { from: location.pathname }
-            });
+            navigate("/auth/signin", { replace: true });
           }
         } else if (event === 'SIGNED_IN') {
           // Check if user is approved when they sign in
@@ -131,9 +121,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
             if (profile?.is_approved) {
               setIsAuthenticated(true);
-              // Redirect to the saved path if it exists
-              const savedPath = location.state?.from || '/feed';
-              navigate(savedPath, { replace: true });
             } else {
               navigate("/auth/pending", { replace: true });
               setIsAuthenticated(false);
@@ -149,14 +136,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }, [navigate, location.pathname]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
-          <p className="text-sage-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   if (!isAuthenticated && !location.pathname.includes('/auth/')) {
