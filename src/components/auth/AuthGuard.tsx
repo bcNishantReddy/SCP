@@ -32,7 +32,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
       } catch (error: any) {
         console.error("Auth error:", error);
         
-        // Handle specific auth errors
         if (error.message?.includes('refresh_token_not_found')) {
           toast({
             title: "Session Expired",
@@ -58,7 +57,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         
-        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
           if (!location.pathname.includes('/auth/')) {
             navigate("/auth/signin", { replace: true });
