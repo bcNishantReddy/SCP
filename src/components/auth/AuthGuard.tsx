@@ -81,6 +81,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           console.log("Session refreshed successfully");
         }
         
+        console.log("Authentication check completed successfully");
         setIsAuthenticated(true);
         setIsLoading(false);
       } catch (error: any) {
@@ -146,7 +147,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate, location, toast]);
 
   if (isLoading) {
     return (
