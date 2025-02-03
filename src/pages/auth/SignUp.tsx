@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpForm } from "@/components/auth/SignUpForm";
+import { validateSignUpForm } from "@/utils/auth-validation";
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +21,12 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
+      // Validate form data
+      const errors = validateSignUpForm(formData);
+      if (errors.length > 0) {
+        throw new Error(errors[0]);
+      }
+
       console.log("Starting signup process for:", { 
         email: formData.email.trim(),
         role: formData.role 
@@ -57,7 +64,7 @@ export default function SignUp() {
       // Show success message
       toast({
         title: "Registration Successful!",
-        description: "You can now sign in to your account.",
+        description: "Please check your email to verify your account.",
       });
       
       // Redirect to signin page
@@ -67,7 +74,8 @@ export default function SignUp() {
       
       let errorMessage = "An error occurred during signup.";
       
-      if (error.message?.includes("duplicate key")) {
+      if (error.message?.includes("duplicate key") || 
+          error.message?.includes("already registered")) {
         errorMessage = "An account with this email already exists.";
       } else if (error.message?.includes("Password")) {
         errorMessage = error.message;
@@ -75,6 +83,9 @@ export default function SignUp() {
         errorMessage = "Please enter a valid email address.";
       } else if (error.message?.includes("role")) {
         errorMessage = "Please select a valid role.";
+      } else if (error.message?.includes("Database error")) {
+        errorMessage = "There was an issue creating your account. Please try again.";
+        console.error("Database error details:", error);
       } else {
         errorMessage = error.message;
       }
