@@ -2,14 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,7 +33,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
             });
           }
           setIsAuthenticated(false);
-          setIsLoading(false);
           return;
         }
 
@@ -56,7 +53,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
           await supabase.auth.signOut();
           navigate("/auth/pending", { replace: true });
           setIsAuthenticated(false);
-          setIsLoading(false);
           return;
         }
 
@@ -83,7 +79,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
         
         console.log("Authentication check completed successfully");
         setIsAuthenticated(true);
-        setIsLoading(false);
       } catch (error: any) {
         console.error("Auth error:", error);
         
@@ -105,7 +100,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
             state: { returnTo: location.pathname }
           });
         }
-        setIsLoading(false);
       }
     };
 
@@ -148,14 +142,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
       subscription.unsubscribe();
     };
   }, [navigate, location, toast]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
-      </div>
-    );
-  }
 
   if (!isAuthenticated && !location.pathname.includes('/auth/')) {
     return null;
