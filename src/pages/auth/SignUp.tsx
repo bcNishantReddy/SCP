@@ -32,23 +32,7 @@ export default function SignUp() {
         role: formData.role 
       });
 
-      // First check if email already exists in profiles
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', formData.email.trim())
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Profile check error:", profileError);
-        throw new Error("Error checking existing profile");
-      }
-
-      if (existingProfile) {
-        throw new Error("An account with this email already exists");
-      }
-
-      // Attempt signup
+      // Attempt signup with metadata
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
@@ -71,11 +55,13 @@ export default function SignUp() {
 
       console.log("Signup successful:", data.user);
 
+      // Show success message
       toast({
         title: "Registration Successful!",
         description: "You can now sign in to your account.",
       });
       
+      // Redirect to signin page
       navigate("/auth/signin");
     } catch (error: any) {
       console.error("Signup process error:", error);
