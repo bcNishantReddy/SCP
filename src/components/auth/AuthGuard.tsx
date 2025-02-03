@@ -14,6 +14,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+
     const checkAuth = async () => {
       try {
         console.log("Starting auth check...");
@@ -32,7 +34,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
               state: { returnTo: location.pathname }
             });
           }
-          setIsAuthenticated(false);
+          if (mounted) setIsAuthenticated(false);
           return;
         }
 
@@ -52,7 +54,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           console.log("User not approved, redirecting to pending page");
           await supabase.auth.signOut();
           navigate("/auth/pending", { replace: true });
-          setIsAuthenticated(false);
+          if (mounted) setIsAuthenticated(false);
           return;
         }
 
@@ -78,7 +80,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
         
         console.log("Authentication check completed successfully");
-        setIsAuthenticated(true);
+        if (mounted) setIsAuthenticated(true);
+
+        // Check if there's a return path after successful sign in
+        const returnTo = location.state?.returnTo;
+        if (returnTo && location.pathname === '/auth/signin') {
+          navigate(returnTo, { replace: true });
+        }
+
       } catch (error: any) {
         console.error("Auth error:", error);
         
@@ -91,7 +100,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           });
           
           await supabase.auth.signOut();
-          setIsAuthenticated(false);
+          if (mounted) setIsAuthenticated(false);
         }
         
         if (!location.pathname.includes('/auth/')) {
@@ -103,18 +112,20 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
     };
 
+    // Initial auth check
     checkAuth();
 
+    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         
         if (event === 'SIGNED_OUT') {
-          setIsAuthenticated(false);
+          if (mounted) setIsAuthenticated(false);
           if (!location.pathname.includes('/auth/')) {
             navigate("/auth/signin", { replace: true });
           }
-        } else if (event === 'SIGNED_IN') {
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
             const { data: profile } = await supabase
               .from('profiles')
@@ -123,7 +134,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
               .single();
 
             if (profile?.is_approved) {
-              setIsAuthenticated(true);
+              if (mounted) setIsAuthenticated(true);
               // Check if there's a return path after successful sign in
               const returnTo = location.state?.returnTo;
               if (returnTo && location.pathname === '/auth/signin') {
@@ -131,14 +142,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
               }
             } else {
               navigate("/auth/pending", { replace: true });
-              setIsAuthenticated(false);
+              if (mounted) setIsAuthenticated(false);
             }
           }
         }
       }
     );
 
+    // Cleanup function
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate, location, toast]);
