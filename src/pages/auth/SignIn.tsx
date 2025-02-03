@@ -20,20 +20,7 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      console.log("Attempting sign in for email:", email.trim());
-      
-      // First check if the user exists in profiles
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, role')
-        .eq('email', email.trim())
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Error checking profile:", profileError);
-      }
-
-      console.log("Profile check result:", profile);
+      console.log("Starting sign in process for:", email.trim());
 
       // Attempt sign in
       const { data, error } = await supabase.auth.signInWithPassword({
