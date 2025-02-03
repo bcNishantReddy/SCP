@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -34,7 +36,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
               state: { returnTo: location.pathname }
             });
           }
-          if (mounted) setIsAuthenticated(false);
+          if (mounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -60,7 +65,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
         
         console.log("Authentication check completed successfully");
-        if (mounted) setIsAuthenticated(true);
+        if (mounted) {
+          setIsAuthenticated(true);
+          setIsLoading(false);
+        }
 
         // Check if there's a return path after successful sign in
         const returnTo = location.state?.returnTo;
@@ -80,7 +88,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
           });
           
           await supabase.auth.signOut();
-          if (mounted) setIsAuthenticated(false);
+          if (mounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
         }
         
         if (!location.pathname.includes('/auth/')) {
@@ -101,13 +112,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
         console.log("Auth state changed:", event, session?.user?.email);
         
         if (event === 'SIGNED_OUT') {
-          if (mounted) setIsAuthenticated(false);
+          if (mounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
           if (!location.pathname.includes('/auth/')) {
             navigate("/auth/signin", { replace: true });
           }
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
-            if (mounted) setIsAuthenticated(true);
+            if (mounted) {
+              setIsAuthenticated(true);
+              setIsLoading(false);
+            }
             // Check if there's a return path after successful sign in
             const returnTo = location.state?.returnTo;
             if (returnTo && location.pathname === '/auth/signin') {
@@ -125,9 +142,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
     };
   }, [navigate, location, toast]);
 
-  // Show nothing while checking authentication
-  if (isAuthenticated === null) {
-    return null;
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
+      </div>
+    );
   }
 
   // If not authenticated and not on an auth page, show nothing
