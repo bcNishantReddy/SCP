@@ -8,7 +8,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -143,9 +143,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
     };
   }, [navigate, location, toast]);
 
+  // Show nothing while checking authentication
+  if (isAuthenticated === null) {
+    return null;
+  }
+
+  // If not authenticated and not on an auth page, show nothing
   if (!isAuthenticated && !location.pathname.includes('/auth/')) {
     return null;
   }
 
+  // If authenticated or on auth page, render children
   return <>{children}</>;
 }
