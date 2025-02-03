@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpForm } from "@/components/auth/SignUpForm";
-import { validateSignUpForm } from "@/utils/auth-validation";
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,25 +20,10 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      // Validate form
-      const errors = validateSignUpForm(formData);
-      if (errors.length > 0) {
-        throw new Error(errors[0]);
-      }
-
       console.log("Starting signup process for:", { 
         email: formData.email.trim(),
         role: formData.role 
       });
-
-      // First check if user already exists
-      const { data: existingUser } = await supabase.auth.admin.getUserByEmail(
-        formData.email.trim()
-      );
-
-      if (existingUser) {
-        throw new Error("An account with this email already exists");
-      }
 
       // Validate role
       const validRoles = ["student", "faculty", "investor", "alumni"];
@@ -70,20 +54,6 @@ export default function SignUp() {
 
       console.log("Signup successful:", data.user);
 
-      // Verify profile creation
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Profile verification error:", profileError);
-        // Don't throw here, just log the error
-      } else {
-        console.log("Profile created successfully:", profile);
-      }
-
       // Show success message
       toast({
         title: "Registration Successful!",
@@ -97,13 +67,13 @@ export default function SignUp() {
       
       let errorMessage = "An error occurred during signup.";
       
-      if (error.message.includes("duplicate key")) {
+      if (error.message?.includes("duplicate key")) {
         errorMessage = "An account with this email already exists.";
-      } else if (error.message.includes("Password")) {
+      } else if (error.message?.includes("Password")) {
         errorMessage = error.message;
-      } else if (error.message.includes("valid email")) {
+      } else if (error.message?.includes("valid email")) {
         errorMessage = "Please enter a valid email address.";
-      } else if (error.message.includes("role")) {
+      } else if (error.message?.includes("role")) {
         errorMessage = "Please select a valid role.";
       } else {
         errorMessage = error.message;
