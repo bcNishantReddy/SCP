@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -17,8 +18,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log("Starting auth check...");
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log("Checking auth session:", session);
         
         if (sessionError) {
           console.error("Session error:", sessionError);
@@ -26,11 +27,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
 
         if (!session) {
+          console.log("No session found, redirecting to signin");
           if (!location.pathname.includes('/auth/')) {
-            console.log("No session found, redirecting to signin");
-            navigate("/auth/signin", { replace: true });
+            navigate("/auth/signin", { 
+              replace: true,
+              state: { returnTo: location.pathname }
+            });
           }
           setIsAuthenticated(false);
+          setIsLoading(false);
           return;
         }
 
@@ -46,15 +51,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
           throw profileError;
         }
 
-        if (!profile.is_approved) {
+        if (!profile?.is_approved) {
           console.log("User not approved, redirecting to pending page");
           await supabase.auth.signOut();
           navigate("/auth/pending", { replace: true });
           setIsAuthenticated(false);
+          setIsLoading(false);
           return;
         }
 
-        // Attempt to refresh the session if it's close to expiring
+        // Session refresh logic
         const expiresAt = session?.expires_at ?? 0;
         const timeNow = Math.floor(Date.now() / 1000);
         
@@ -76,6 +82,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
         
         setIsAuthenticated(true);
+        setIsLoading(false);
       } catch (error: any) {
         console.error("Auth error:", error);
         
@@ -92,9 +99,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
         
         if (!location.pathname.includes('/auth/')) {
-          navigate("/auth/signin", { replace: true });
+          navigate("/auth/signin", { 
+            replace: true,
+            state: { returnTo: location.pathname }
+          });
         }
-      } finally {
         setIsLoading(false);
       }
     };
@@ -111,7 +120,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
             navigate("/auth/signin", { replace: true });
           }
         } else if (event === 'SIGNED_IN') {
-          // Check if user is approved when they sign in
           if (session?.user) {
             const { data: profile } = await supabase
               .from('profiles')
@@ -121,6 +129,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
             if (profile?.is_approved) {
               setIsAuthenticated(true);
+              // Check if there's a return path after successful sign in
+              const returnTo = location.state?.returnTo;
+              if (returnTo && location.pathname === '/auth/signin') {
+                navigate(returnTo, { replace: true });
+              }
             } else {
               navigate("/auth/pending", { replace: true });
               setIsAuthenticated(false);
@@ -136,7 +149,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }, [navigate, location.pathname]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
+      </div>
+    );
   }
 
   if (!isAuthenticated && !location.pathname.includes('/auth/')) {
