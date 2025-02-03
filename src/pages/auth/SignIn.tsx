@@ -20,8 +20,22 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      console.log("Attempting sign in with:", { email: email.trim() });
+      console.log("Attempting sign in for email:", email.trim());
       
+      // First check if the user exists in profiles
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('email', email.trim())
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Error checking profile:", profileError);
+      }
+
+      console.log("Profile check result:", profile);
+
+      // Attempt sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -29,11 +43,6 @@ export default function SignIn() {
 
       if (error) {
         console.error("Sign in error:", error);
-        
-        // Handle specific error cases
-        if (error.message.includes("Database error querying schema")) {
-          throw new Error("There was an issue with the database. Please try again later or contact support.");
-        }
         throw error;
       }
 
@@ -41,33 +50,13 @@ export default function SignIn() {
         throw new Error("No user data returned from authentication");
       }
 
-      // Check if user is approved
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_approved')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Profile fetch error:", profileError);
-        if (profileError.message?.includes("Results contain 0 rows")) {
-          throw new Error("User profile not found. Please contact support.");
-        }
-        throw profileError;
-      }
-
-      if (!profile?.is_approved) {
-        // Sign out the user if not approved
-        await supabase.auth.signOut();
-        navigate("/auth/pending");
-        return;
-      }
-
       console.log("Sign in successful:", data.user);
+      
       toast({
         title: "Success!",
         description: "You have successfully signed in.",
       });
+      
       navigate("/feed");
     } catch (error: any) {
       console.error("Sign in process error:", error);
