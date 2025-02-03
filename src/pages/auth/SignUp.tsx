@@ -32,6 +32,21 @@ export default function SignUp() {
         role: formData.role 
       });
 
+      // First check if user already exists
+      const { data: existingUser } = await supabase.auth.admin.getUserByEmail(
+        formData.email.trim()
+      );
+
+      if (existingUser) {
+        throw new Error("An account with this email already exists");
+      }
+
+      // Validate role
+      const validRoles = ["student", "faculty", "investor", "alumni"];
+      if (!validRoles.includes(formData.role)) {
+        throw new Error("Invalid role selected");
+      }
+
       // Attempt signup with metadata
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
@@ -54,6 +69,20 @@ export default function SignUp() {
       }
 
       console.log("Signup successful:", data.user);
+
+      // Verify profile creation
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Profile verification error:", profileError);
+        // Don't throw here, just log the error
+      } else {
+        console.log("Profile created successfully:", profile);
+      }
 
       // Show success message
       toast({
