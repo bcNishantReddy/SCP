@@ -38,26 +38,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
           return;
         }
 
-        // Check if user is approved
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_approved')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) {
-          console.error("Profile error:", profileError);
-          throw profileError;
-        }
-
-        if (!profile?.is_approved) {
-          console.log("User not approved, redirecting to pending page");
-          await supabase.auth.signOut();
-          navigate("/auth/pending", { replace: true });
-          if (mounted) setIsAuthenticated(false);
-          return;
-        }
-
         // Session refresh logic
         const expiresAt = session?.expires_at ?? 0;
         const timeNow = Math.floor(Date.now() / 1000);
@@ -127,22 +107,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
           }
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('is_approved')
-              .eq('id', session.user.id)
-              .single();
-
-            if (profile?.is_approved) {
-              if (mounted) setIsAuthenticated(true);
-              // Check if there's a return path after successful sign in
-              const returnTo = location.state?.returnTo;
-              if (returnTo && location.pathname === '/auth/signin') {
-                navigate(returnTo, { replace: true });
-              }
-            } else {
-              navigate("/auth/pending", { replace: true });
-              if (mounted) setIsAuthenticated(false);
+            if (mounted) setIsAuthenticated(true);
+            // Check if there's a return path after successful sign in
+            const returnTo = location.state?.returnTo;
+            if (returnTo && location.pathname === '/auth/signin') {
+              navigate(returnTo, { replace: true });
             }
           }
         }

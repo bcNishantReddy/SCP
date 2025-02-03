@@ -73,12 +73,10 @@ export default function SignUp() {
 
       toast({
         title: "Registration Successful!",
-        description: "Please wait for admin approval to access your account.",
+        description: "You can now sign in to your account.",
       });
       
-      // Sign out the user since they need approval
-      await supabase.auth.signOut();
-      navigate("/auth/pending");
+      navigate("/auth/signin");
     } catch (error: any) {
       console.error("Signup process error:", error);
       
