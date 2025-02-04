@@ -16,6 +16,7 @@ interface ProjectCardProps {
     description: string;
     category: string;
     banner_url: string | null;
+    details: string | null;
     user_id: string;
   };
   currentUserId: string | undefined;

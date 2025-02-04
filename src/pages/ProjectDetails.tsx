@@ -20,6 +20,7 @@ interface Project {
   details: string | null;
   detail_images: string[] | null;
   user_id: string;
+  created_at: string;
   owner: {
     id: string;
     name: string;
@@ -243,12 +244,36 @@ const ProjectDetails = () => {
             )}
 
             <TeamSection 
-              projectId={id!}
+              projectId={id}
               isOwner={isOwner}
               owner={project.owner}
               approvedRequests={approvedRequests}
               pendingRequests={pendingRequests}
             />
+
+            {!isOwner && !hasRequestedToJoin && !isRejected && (
+              <div className="flex justify-center mt-6">
+                <Button 
+                  onClick={() => handleJoinRequest.mutate()}
+                  disabled={handleJoinRequest.isPending}
+                  className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  {handleJoinRequest.isPending ? "Sending Request..." : "Request to Join"}
+                </Button>
+              </div>
+            )}
+            {hasRequestedToJoin && (
+              <div className="flex justify-center mt-6">
+                <Button 
+                  variant="secondary"
+                  disabled
+                  className="w-full sm:w-auto"
+                >
+                  Request Pending
+                </Button>
+              </div>
+            )}
 
             {/* Creation Date */}
             <div className="text-sm text-muted-foreground text-right">
