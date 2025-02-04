@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,8 +44,10 @@ export default function SignIn() {
         title: "Success!",
         description: "You have successfully signed in.",
       });
-      
-      navigate("/feed");
+
+      // Get the return path or default to /feed
+      const returnTo = location.state?.returnTo || "/feed";
+      navigate(returnTo);
     } catch (error: any) {
       console.error("Sign in process error:", error);
       let errorMessage = "An error occurred during sign in.";

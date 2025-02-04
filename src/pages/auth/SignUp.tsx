@@ -6,6 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { validateSignUpForm } from "@/utils/auth-validation";
+import type { Database } from "@/integrations/supabase/types";
+
+type UserRole = Database["public"]["Enums"]["user_role"];
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,14 +32,11 @@ export default function SignUp() {
 
       console.log("Starting signup process for:", { 
         email: formData.email.trim(),
-        role: formData.role 
+        role: formData.role || 'student'
       });
 
-      // Validate role
-      const validRoles = ["student", "faculty", "investor", "alumni"];
-      if (!validRoles.includes(formData.role)) {
-        throw new Error("Invalid role selected");
-      }
+      // Ensure role is valid, default to student if not provided
+      const role = formData.role ? formData.role as UserRole : 'student';
 
       // Attempt signup with metadata
       const { data, error } = await supabase.auth.signUp({
@@ -45,7 +45,7 @@ export default function SignUp() {
         options: {
           data: {
             name: formData.name.trim(),
-            role: formData.role,
+            role: role,
           },
         },
       });
@@ -85,7 +85,6 @@ export default function SignUp() {
         errorMessage = "Please select a valid role.";
       } else if (error.message?.includes("Database error")) {
         errorMessage = "There was an issue creating your account. Please try again.";
-        console.error("Database error details:", error);
       } else {
         errorMessage = error.message;
       }

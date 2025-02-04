@@ -9,7 +9,7 @@ BEGIN
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'name', 'Anonymous'),
-    (NEW.raw_user_meta_data->>'role')::user_role,
+    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'student'::user_role),
     true  -- Auto-approve all users
   );
   RETURN NEW;
