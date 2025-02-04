@@ -22,6 +22,10 @@ export default function SignUp() {
     role: string;
   }) => {
     setIsLoading(true);
+    console.log("Starting signup process for:", { 
+      email: formData.email.trim(),
+      role: formData.role || 'student'
+    });
 
     try {
       // Validate form data
@@ -29,11 +33,6 @@ export default function SignUp() {
       if (errors.length > 0) {
         throw new Error(errors[0]);
       }
-
-      console.log("Starting signup process for:", { 
-        email: formData.email.trim(),
-        role: formData.role || 'student'
-      });
 
       // First check if user already exists
       const { data: existingUser, error: checkError } = await supabase
