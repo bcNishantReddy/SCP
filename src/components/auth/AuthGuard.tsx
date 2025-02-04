@@ -43,25 +43,50 @@ export function AuthGuard({ children }: AuthGuardProps) {
           return;
         }
 
-        // Session refresh logic
+        // Session refresh logic with better error handling
         const expiresAt = session?.expires_at ?? 0;
         const timeNow = Math.floor(Date.now() / 1000);
         
         if (expiresAt - timeNow < 300) {
-          console.log("Session about to expire, refreshing...");
-          const { data: { session: refreshedSession }, error: refreshError } = 
-            await supabase.auth.refreshSession();
+          console.log("Session about to expire, attempting refresh...");
+          try {
+            const { data: { session: refreshedSession }, error: refreshError } = 
+              await supabase.auth.refreshSession();
+              
+            if (refreshError) {
+              console.error("Session refresh error:", refreshError);
+              // If refresh fails, sign out and redirect
+              await supabase.auth.signOut();
+              throw refreshError;
+            }
             
-          if (refreshError) {
-            console.error("Session refresh error:", refreshError);
-            throw refreshError;
+            if (!refreshedSession) {
+              console.error("No session after refresh");
+              await supabase.auth.signOut();
+              throw new Error("Failed to refresh session");
+            }
+            
+            console.log("Session refreshed successfully");
+          } catch (refreshError: any) {
+            console.error("Failed to refresh session:", refreshError);
+            toast({
+              title: "Session Expired",
+              description: "Please sign in again",
+              variant: "destructive",
+            });
+            
+            if (!location.pathname.includes('/auth/')) {
+              navigate("/auth/signin", { 
+                replace: true,
+                state: { returnTo: location.pathname }
+              });
+            }
+            if (mounted) {
+              setIsAuthenticated(false);
+              setIsLoading(false);
+            }
+            return;
           }
-          
-          if (!refreshedSession) {
-            throw new Error("Failed to refresh session");
-          }
-          
-          console.log("Session refreshed successfully");
         }
         
         console.log("Authentication check completed successfully");
@@ -70,17 +95,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
           setIsLoading(false);
         }
 
-        // Check if there's a return path after successful sign in
-        const returnTo = location.state?.returnTo;
-        if (returnTo && location.pathname === '/auth/signin') {
-          navigate(returnTo, { replace: true });
-        }
-
       } catch (error: any) {
         console.error("Auth error:", error);
         
         if (error.message?.includes('session_not_found') || 
-            error.message?.includes('refresh_token_not_found')) {
+            error.message?.includes('refresh_token_not_found') ||
+            error.message?.includes('Invalid Refresh Token')) {
           toast({
             title: "Session Expired",
             description: "Please sign in again",
@@ -88,17 +108,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
           });
           
           await supabase.auth.signOut();
-          if (mounted) {
-            setIsAuthenticated(false);
-            setIsLoading(false);
+          if (!location.pathname.includes('/auth/')) {
+            navigate("/auth/signin", { 
+              replace: true,
+              state: { returnTo: location.pathname }
+            });
           }
         }
         
-        if (!location.pathname.includes('/auth/')) {
-          navigate("/auth/signin", { 
-            replace: true,
-            state: { returnTo: location.pathname }
-          });
+        if (mounted) {
+          setIsAuthenticated(false);
+          setIsLoading(false);
         }
       }
     };
@@ -106,12 +126,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
     // Initial auth check
     checkAuth();
 
-    // Subscribe to auth changes
+    // Subscribe to auth changes with improved error handling
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
           if (mounted) {
             setIsAuthenticated(false);
             setIsLoading(false);
