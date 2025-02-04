@@ -192,13 +192,16 @@ const ProjectDetails = () => {
   const isOwner = project.user_id === currentUserId;
   const pendingRequests = joinRequests?.filter(req => req.status === 'pending') || [];
   const approvedRequests = joinRequests?.filter(req => req.status === 'approved') || [];
+  const userJoinRequest = joinRequests?.find(
+    request => request.user_id === currentUserId
+  );
+
+  const approvedMembers = joinRequests?.filter(request => request.status === 'approved').length || 0;
+  const memberCount = approvedMembers + 1; 
+
   const hasRequestedToJoin = joinRequests?.some(
     request => request.user_id === currentUserId && request.status === 'pending'
   );
-  const isRejected = joinRequests?.some(
-    request => request.user_id === currentUserId && request.status === 'rejected'
-  );
-  const memberCount = approvedRequests.length + 1; // +1 for the owner
 
   return (
     <div className="min-h-screen bg-background">
@@ -251,7 +254,7 @@ const ProjectDetails = () => {
               pendingRequests={pendingRequests}
             />
 
-            {!isOwner && !hasRequestedToJoin && !isRejected && (
+            {!isOwner && !hasRequestedToJoin && (
               <div className="flex justify-center mt-6">
                 <Button 
                   onClick={() => handleJoinRequest.mutate()}
