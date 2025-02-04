@@ -17,9 +17,12 @@ const LiveFeed = () => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name, title, bio')
+        .select('name, title, bio, role')
         .eq('id', user.id)
         .single();
+
+      // Skip profile completion check for admin users
+      if (profile?.role === 'admin') return;
 
       if (!profile?.name || !profile?.title || !profile?.bio) {
         toast({
