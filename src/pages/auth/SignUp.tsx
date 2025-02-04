@@ -35,6 +35,23 @@ export default function SignUp() {
         role: formData.role || 'student'
       });
 
+      // First check if user already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', formData.email.trim())
+        .maybeSingle();
+
+      if (checkError) {
+        console.error("Error checking existing user:", checkError);
+        throw new Error("Failed to verify account availability");
+      }
+
+      if (existingUser) {
+        console.error("User already exists:", formData.email.trim());
+        throw new Error("An account with this email already exists");
+      }
+
       // Ensure role is valid, default to student if not provided
       const role = formData.role ? formData.role as UserRole : 'student';
 
@@ -75,7 +92,8 @@ export default function SignUp() {
       let errorMessage = "An error occurred during signup.";
       
       if (error.message?.includes("duplicate key") || 
-          error.message?.includes("already registered")) {
+          error.message?.includes("already registered") ||
+          error.message?.includes("already exists")) {
         errorMessage = "An account with this email already exists.";
       } else if (error.message?.includes("Password")) {
         errorMessage = error.message;
@@ -85,6 +103,8 @@ export default function SignUp() {
         errorMessage = "Please select a valid role.";
       } else if (error.message?.includes("Database error")) {
         errorMessage = "There was an issue creating your account. Please try again.";
+      } else if (error.message?.includes("verify account")) {
+        errorMessage = error.message;
       } else {
         errorMessage = error.message;
       }
