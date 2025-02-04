@@ -59,6 +59,10 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
       setError("Password must be at least 6 characters long");
       return false;
     }
+    if (!/\d/.test(formData.password)) {
+      setError("Password must contain at least one number");
+      return false;
+    }
     if (!formData.role) {
       setError("Please select a role");
       return false;
@@ -84,13 +88,6 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Join Boss Y</h1>
-        <p className="text-muted-foreground mt-2">
-          Create your account to get started
-        </p>
-      </div>
-
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
