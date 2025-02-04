@@ -29,22 +29,18 @@ export default function SignUp() {
 
     try {
       // First check if user already exists in profiles
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', formData.email.trim())
         .maybeSingle();
 
-      if (existingProfile) {
-        throw new Error("An account with this email already exists");
+      if (profileError) {
+        console.error("Error checking existing profile:", profileError);
+        throw new Error("Failed to verify account availability");
       }
 
-      // Check if user exists in auth.users (this is a security definer function)
-      const { data: existingAuth } = await supabase.auth.admin.getUserByEmail(
-        formData.email.trim()
-      );
-
-      if (existingAuth) {
+      if (existingProfile) {
         throw new Error("An account with this email already exists");
       }
 
