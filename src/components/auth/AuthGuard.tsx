@@ -43,52 +43,39 @@ export function AuthGuard({ children }: AuthGuardProps) {
           return;
         }
 
-        // Session refresh logic with better error handling
-        const expiresAt = session?.expires_at ?? 0;
-        const timeNow = Math.floor(Date.now() / 1000);
+        // Session refresh logic
+        const { data: { user }, error: refreshError } = await supabase.auth.refreshSession();
         
-        if (expiresAt - timeNow < 300) {
-          console.log("Session about to expire, attempting refresh...");
-          try {
-            const { data: { session: refreshedSession }, error: refreshError } = 
-              await supabase.auth.refreshSession();
-              
-            if (refreshError) {
-              console.error("Session refresh error:", refreshError);
-              // If refresh fails, sign out and redirect
-              await supabase.auth.signOut();
-              throw refreshError;
-            }
-            
-            if (!refreshedSession) {
-              console.error("No session after refresh");
-              await supabase.auth.signOut();
-              throw new Error("Failed to refresh session");
-            }
-            
-            console.log("Session refreshed successfully");
-          } catch (refreshError: any) {
-            console.error("Failed to refresh session:", refreshError);
-            toast({
-              title: "Session Expired",
-              description: "Please sign in again",
-              variant: "destructive",
+        if (refreshError) {
+          console.error("Session refresh error:", refreshError);
+          // Handle refresh error
+          await supabase.auth.signOut();
+          if (!location.pathname.includes('/auth/')) {
+            navigate("/auth/signin", { 
+              replace: true,
+              state: { returnTo: location.pathname }
             });
-            
-            if (!location.pathname.includes('/auth/')) {
-              navigate("/auth/signin", { 
-                replace: true,
-                state: { returnTo: location.pathname }
-              });
-            }
-            if (mounted) {
-              setIsAuthenticated(false);
-              setIsLoading(false);
-            }
-            return;
           }
+          if (mounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
+          return;
         }
-        
+
+        if (!user) {
+          console.error("No user after refresh");
+          await supabase.auth.signOut();
+          if (!location.pathname.includes('/auth/')) {
+            navigate("/auth/signin");
+          }
+          if (mounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
+          return;
+        }
+
         console.log("Authentication check completed successfully");
         if (mounted) {
           setIsAuthenticated(true);
@@ -130,7 +117,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     // Initial auth check
     checkAuth();
 
-    // Subscribe to auth changes with improved error handling
+    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
