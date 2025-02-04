@@ -23,23 +23,6 @@ export default function SignIn() {
     try {
       console.log("Starting sign in process for:", email.trim());
 
-      // First check if the user exists in auth.users
-      const { data: userExists, error: userCheckError } = await supabase
-        .from('profiles')
-        .select('id, role')
-        .eq('email', email.trim())
-        .maybeSingle();
-
-      if (userCheckError) {
-        console.error("Error checking user existence:", userCheckError);
-        throw new Error("Failed to verify user account");
-      }
-
-      if (!userExists) {
-        console.error("No user found with email:", email.trim());
-        throw new Error("No account found with this email. Please sign up first.");
-      }
-
       // Attempt sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -60,6 +43,7 @@ export default function SignIn() {
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
+        variant: "default",
       });
 
       // Get the return path or default to /feed
@@ -67,18 +51,16 @@ export default function SignIn() {
       navigate(returnTo);
     } catch (error: any) {
       console.error("Sign in process error:", error);
-      let errorMessage = "An error occurred during sign in.";
+      let errorMessage = "Invalid email or password.";
       
       if (error.message?.includes("Invalid login credentials")) {
         errorMessage = "Incorrect email or password. Please try again.";
       } else if (error.message?.includes("Email not confirmed")) {
         errorMessage = "Please verify your email address before signing in.";
       } else if (error.message?.includes("No account found")) {
-        errorMessage = error.message;
+        errorMessage = "No account found with this email. Please sign up first.";
       } else if (error.message?.includes("Database error")) {
         errorMessage = "We're experiencing technical difficulties. Please try again later.";
-      } else if (error.message?.includes("Failed to verify")) {
-        errorMessage = "Unable to verify account. Please try again later.";
       }
       
       toast({
