@@ -37,7 +37,7 @@ export default function SignUp() {
       // Ensure role is valid
       const role = formData.role ? formData.role as UserRole : 'student';
 
-      // Attempt signup
+      // Attempt signup with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
@@ -71,17 +71,17 @@ export default function SignUp() {
       
       let errorMessage = "An error occurred during signup.";
       
-      if (error.message?.includes("duplicate key") || 
-          error.message?.includes("already registered") ||
-          error.message?.includes("already exists")) {
+      if (error.message?.toLowerCase().includes("duplicate") || 
+          error.message?.toLowerCase().includes("already registered") ||
+          error.message?.toLowerCase().includes("already exists")) {
         errorMessage = "An account with this email already exists.";
-      } else if (error.message?.includes("Password")) {
+      } else if (error.message?.toLowerCase().includes("password")) {
         errorMessage = "Password must be at least 6 characters long.";
-      } else if (error.message?.includes("valid email")) {
+      } else if (error.message?.toLowerCase().includes("email")) {
         errorMessage = "Please enter a valid email address.";
-      } else if (error.message?.includes("role")) {
+      } else if (error.message?.toLowerCase().includes("role")) {
         errorMessage = "Please select a valid role.";
-      } else if (error.message?.includes("Database error")) {
+      } else if (error.message?.toLowerCase().includes("database")) {
         errorMessage = "There was an issue creating your account. Please try again.";
       } else {
         errorMessage = error.message || "An unexpected error occurred";
