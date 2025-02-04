@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpForm } from "@/components/auth/SignUpForm";
-import { validateSignUpForm } from "@/utils/auth-validation";
 import type { Database } from "@/integrations/supabase/types";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
@@ -28,13 +27,7 @@ export default function SignUp() {
     });
 
     try {
-      // Validate form data
-      const errors = validateSignUpForm(formData);
-      if (errors.length > 0) {
-        throw new Error(errors[0]);
-      }
-
-      // Attempt signup with Supabase Auth
+      // Sign up the user with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
@@ -60,10 +53,8 @@ export default function SignUp() {
       toast({
         title: "Account created successfully!",
         description: "You can now sign in with your credentials.",
-        variant: "default",
       });
       
-      // Redirect to sign in page after successful signup
       navigate("/auth/signin");
     } catch (error: any) {
       console.error("Signup process error:", error);
