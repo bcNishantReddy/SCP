@@ -41,8 +41,9 @@ export default function SignUp() {
         options: {
           data: {
             name: formData.name.trim(),
-            role: formData.role,
+            role: formData.role as UserRole, // Ensure proper type casting
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         },
       });
 
