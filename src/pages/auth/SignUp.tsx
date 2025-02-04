@@ -21,26 +21,36 @@ export default function SignUp() {
     role: UserRole;
   }) => {
     setIsLoading(true);
-    console.log("Starting signup process for:", { 
-      email: formData.email.trim(),
-      role: formData.role
+    console.log("Starting signup process with data:", {
+      email: formData.email,
+      role: formData.role,
+      name: formData.name
     });
 
     try {
-      // Sign up the user with Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email.trim(),
+      // Clean and validate the data
+      const cleanedData = {
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
         options: {
           data: {
             name: formData.name.trim(),
-            role: formData.role,
+            role: formData.role as UserRole,
+            email: formData.email.trim().toLowerCase(),
           },
         },
+      };
+
+      console.log("Attempting signup with cleaned data:", {
+        ...cleanedData,
+        password: "[REDACTED]"
       });
 
+      // Sign up the user with Supabase Auth
+      const { data, error } = await supabase.auth.signUp(cleanedData);
+
       if (error) {
-        console.error("Signup error:", error);
+        console.error("Supabase signup error:", error);
         throw error;
       }
 
@@ -48,7 +58,10 @@ export default function SignUp() {
         throw new Error("No user data returned from signup");
       }
 
-      console.log("Signup successful:", data.user);
+      console.log("Signup successful:", {
+        userId: data.user.id,
+        email: data.user.email
+      });
 
       toast({
         title: "Account created successfully!",
@@ -61,18 +74,12 @@ export default function SignUp() {
       
       let errorMessage = "An error occurred during signup.";
       
-      if (error.message?.toLowerCase().includes("duplicate") || 
-          error.message?.toLowerCase().includes("already registered") ||
-          error.message?.toLowerCase().includes("already exists")) {
-        errorMessage = "An account with this email already exists.";
-      } else if (error.message?.toLowerCase().includes("password")) {
-        errorMessage = "Password must be at least 6 characters long and contain at least one number.";
+      if (error.message?.toLowerCase().includes("database")) {
+        errorMessage = "There was an issue creating your account. Please try again later.";
       } else if (error.message?.toLowerCase().includes("email")) {
         errorMessage = "Please enter a valid email address.";
-      } else if (error.message?.toLowerCase().includes("role")) {
-        errorMessage = "Please select a valid role.";
-      } else if (error.message?.toLowerCase().includes("database")) {
-        errorMessage = "There was an issue creating your account. Please try again.";
+      } else if (error.message?.toLowerCase().includes("password")) {
+        errorMessage = "Password must be at least 6 characters long.";
       } else {
         errorMessage = error.message || "An unexpected error occurred";
       }
