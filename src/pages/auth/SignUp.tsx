@@ -28,33 +28,36 @@ export default function SignUp() {
     });
 
     try {
+      // First check if user already exists in profiles
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', formData.email.trim())
+        .maybeSingle();
+
+      if (existingProfile) {
+        throw new Error("An account with this email already exists");
+      }
+
+      // Check if user exists in auth.users (this is a security definer function)
+      const { data: existingAuth } = await supabase.auth.admin.getUserByEmail(
+        formData.email.trim()
+      );
+
+      if (existingAuth) {
+        throw new Error("An account with this email already exists");
+      }
+
       // Validate form data
       const errors = validateSignUpForm(formData);
       if (errors.length > 0) {
         throw new Error(errors[0]);
       }
 
-      // First check if user already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', formData.email.trim())
-        .maybeSingle();
-
-      if (checkError) {
-        console.error("Error checking existing user:", checkError);
-        throw new Error("Failed to verify account availability");
-      }
-
-      if (existingUser) {
-        console.error("User already exists:", formData.email.trim());
-        throw new Error("An account with this email already exists");
-      }
-
-      // Ensure role is valid, default to student if not provided
+      // Ensure role is valid
       const role = formData.role ? formData.role as UserRole : 'student';
 
-      // Attempt signup with metadata
+      // Attempt signup
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
@@ -77,13 +80,11 @@ export default function SignUp() {
 
       console.log("Signup successful:", data.user);
 
-      // Show success message
       toast({
         title: "Welcome to Boss Y!",
         description: "Your account has been created successfully. Please check your email to verify your account.",
       });
       
-      // Redirect to signin page
       navigate("/auth/signin");
     } catch (error: any) {
       console.error("Signup process error:", error);
@@ -102,10 +103,8 @@ export default function SignUp() {
         errorMessage = "Please select a valid role.";
       } else if (error.message?.includes("Database error")) {
         errorMessage = "There was an issue creating your account. Please try again.";
-      } else if (error.message?.includes("verify account")) {
-        errorMessage = error.message;
       } else {
-        errorMessage = error.message;
+        errorMessage = error.message || "An unexpected error occurred";
       }
       
       toast({
