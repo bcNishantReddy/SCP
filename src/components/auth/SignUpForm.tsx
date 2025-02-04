@@ -97,7 +97,6 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
         ...formData,
         email: formData.email.trim(),
         name: formData.name.trim(),
-        role: formData.role || "student"
       };
       console.log("Submitting cleaned form data:", { 
         ...cleanedData, 
