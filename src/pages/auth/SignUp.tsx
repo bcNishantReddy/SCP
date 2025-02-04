@@ -28,22 +28,6 @@ export default function SignUp() {
     });
 
     try {
-      // First check if user already exists in profiles
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', formData.email.trim())
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Error checking existing profile:", profileError);
-        throw new Error("Failed to verify account availability");
-      }
-
-      if (existingProfile) {
-        throw new Error("An account with this email already exists");
-      }
-
       // Validate form data
       const errors = validateSignUpForm(formData);
       if (errors.length > 0) {
