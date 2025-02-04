@@ -218,20 +218,29 @@ const ProjectDetails = () => {
             </Card>
 
             {/* Details Section */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Details</h2>
-              <div className="space-y-4">
+            {project.details && (
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Details</h2>
                 <p className="text-gray-700 whitespace-pre-wrap">{project.details}</p>
-                {project.detail_images?.map((image: string, index: number) => (
-                  <img
-                    key={index}
-                    src={image}
-                    alt={`Project detail ${index + 1}`}
-                    className="rounded-lg max-h-96 w-full object-cover"
-                  />
-                ))}
-              </div>
-            </Card>
+              </Card>
+            )}
+
+            {/* Images Section */}
+            {project.detail_images && project.detail_images.length > 0 && (
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Project Images</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {project.detail_images.map((image: string, index: number) => (
+                    <img
+                      key={index}
+                      src={image}
+                      alt={`Project detail ${index + 1}`}
+                      className="rounded-lg max-h-96 w-full object-cover"
+                    />
+                  ))}
+                </div>
+              </Card>
+            )}
 
             <TeamSection 
               projectId={id!}
@@ -240,6 +249,11 @@ const ProjectDetails = () => {
               approvedRequests={approvedRequests}
               pendingRequests={pendingRequests}
             />
+
+            {/* Creation Date */}
+            <div className="text-sm text-muted-foreground text-right">
+              Created on {project.created_at ? format(new Date(project.created_at), 'PPP') : 'Unknown date'}
+            </div>
           </div>
         </div>
       </main>

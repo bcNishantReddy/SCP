@@ -23,6 +23,7 @@ export function AddProjectModal() {
     title: "",
     description: "",
     category: "",
+    details: "",
   });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const { toast } = useToast();
@@ -57,6 +58,7 @@ export function AddProjectModal() {
           title: formData.title,
           description: formData.description,
           category: formData.category,
+          details: formData.details,
           banner_url: bannerUrl,
           user_id: user.id,
         });
@@ -69,7 +71,7 @@ export function AddProjectModal() {
       });
       
       setIsOpen(false);
-      setFormData({ title: "", description: "", category: "" });
+      setFormData({ title: "", description: "", category: "", details: "" });
       setBannerFile(null);
     } catch (error) {
       toast({
@@ -121,6 +123,16 @@ export function AddProjectModal() {
               className="min-h-[100px]"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="project-details">Details</Label>
+            <Textarea
+              id="project-details"
+              placeholder="Add detailed information about your project..."
+              className="min-h-[150px]"
+              value={formData.details}
+              onChange={(e) => setFormData({ ...formData, details: e.target.value })}
             />
           </div>
           <div className="grid gap-2">

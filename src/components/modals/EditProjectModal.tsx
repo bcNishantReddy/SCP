@@ -21,6 +21,7 @@ interface EditProjectModalProps {
     title: string;
     description: string;
     category: string;
+    details: string | null;
     banner_url: string | null;
   };
   isOpen: boolean;
@@ -34,6 +35,7 @@ export function EditProjectModal({ project, isOpen, onClose, onUpdate }: EditPro
     title: project.title,
     description: project.description,
     category: project.category,
+    details: project.details || "",
   });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const { toast } = useToast();
@@ -68,6 +70,7 @@ export function EditProjectModal({ project, isOpen, onClose, onUpdate }: EditPro
           title: formData.title,
           description: formData.description,
           category: formData.category,
+          details: formData.details,
           banner_url: bannerUrl,
         })
         .eq('id', project.id);
@@ -125,6 +128,16 @@ export function EditProjectModal({ project, isOpen, onClose, onUpdate }: EditPro
               className="min-h-[100px]"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="project-details">Details</Label>
+            <Textarea
+              id="project-details"
+              placeholder="Add detailed information about your project..."
+              className="min-h-[150px]"
+              value={formData.details}
+              onChange={(e) => setFormData({ ...formData, details: e.target.value })}
             />
           </div>
           <div className="grid gap-2">
