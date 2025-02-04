@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
+type Tables = Database["public"]["Tables"];
+type TableNames = keyof Tables;
 
 export const UserManagementSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -138,25 +140,25 @@ export const UserManagementSection = () => {
         throw new Error("Unauthorized: User is not an admin");
       }
 
-      // Start a series of delete operations for all related data
-      const tables = [
-        'addresses',
-        'comments',
-        'contacts',
-        'education',
-        'event_registrations',
-        'events',
-        'experiences',
-        'group_join_requests',
-        'group_members',
-        'messages',
-        'opportunity_applications',
-        'portfolios',
-        'post_likes',
-        'posts',
-        'project_join_requests',
-        'social_urls',
-        'tutorials'
+      // Define tables to clean up with proper typing
+      const tables: TableNames[] = [
+        "addresses",
+        "comments",
+        "contacts",
+        "education",
+        "event_registrations",
+        "events",
+        "experiences",
+        "group_join_requests",
+        "group_members",
+        "messages",
+        "opportunity_applications",
+        "portfolios",
+        "post_likes",
+        "posts",
+        "project_join_requests",
+        "social_urls",
+        "tutorials"
       ];
 
       // Delete data from all related tables
