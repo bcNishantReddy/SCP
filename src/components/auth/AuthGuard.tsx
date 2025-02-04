@@ -97,23 +97,27 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
       } catch (error: any) {
         console.error("Auth error:", error);
+        let errorMessage = "Please sign in again";
         
-        if (error.message?.includes('session_not_found') || 
-            error.message?.includes('refresh_token_not_found') ||
-            error.message?.includes('Invalid Refresh Token')) {
-          toast({
-            title: "Session Expired",
-            description: "Please sign in again",
-            variant: "destructive",
+        if (error.message?.includes('Database error')) {
+          errorMessage = "There was a database error. Please try again later.";
+        } else if (error.message?.includes('refresh_token_not_found') || 
+                   error.message?.includes('Invalid Refresh Token')) {
+          errorMessage = "Your session has expired. Please sign in again.";
+        }
+        
+        toast({
+          title: "Authentication Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        
+        await supabase.auth.signOut();
+        if (!location.pathname.includes('/auth/')) {
+          navigate("/auth/signin", { 
+            replace: true,
+            state: { returnTo: location.pathname }
           });
-          
-          await supabase.auth.signOut();
-          if (!location.pathname.includes('/auth/')) {
-            navigate("/auth/signin", { 
-              replace: true,
-              state: { returnTo: location.pathname }
-            });
-          }
         }
         
         if (mounted) {
@@ -131,7 +135,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         
-        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        if (event === 'SIGNED_OUT') {
           if (mounted) {
             setIsAuthenticated(false);
             setIsLoading(false);
