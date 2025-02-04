@@ -34,8 +34,6 @@ import {
 } from "@/components/ui/alert-dialog";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
-type Tables = Database["public"]["Tables"];
-type TableNames = keyof Tables;
 
 export const UserManagementSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,86 +138,6 @@ export const UserManagementSection = () => {
         throw new Error("Unauthorized: User is not an admin");
       }
 
-      // Define tables to clean up with proper typing
-      const tables: TableNames[] = [
-        "addresses",
-        "comments",
-        "contacts",
-        "education",
-        "event_registrations",
-        "events",
-        "experiences",
-        "group_join_requests",
-        "group_members",
-        "messages",
-        "opportunity_applications",
-        "portfolios",
-        "post_likes",
-        "posts",
-        "project_join_requests",
-        "social_urls",
-        "tutorials"
-      ];
-
-      // Delete data from all related tables
-      for (const table of tables) {
-        const { error: deleteError } = await supabase
-          .from(table)
-          .delete()
-          .eq('user_id', userId);
-        
-        if (deleteError) {
-          console.error(`Error deleting from ${table}:`, deleteError);
-        }
-      }
-
-      // Delete groups created by the user and cascade to related tables
-      const { data: userGroups } = await supabase
-        .from('groups')
-        .select('id')
-        .eq('creator_id', userId);
-
-      if (userGroups) {
-        for (const group of userGroups) {
-          // Delete related group data
-          await supabase.from('group_members').delete().eq('group_id', group.id);
-          await supabase.from('group_join_requests').delete().eq('group_id', group.id);
-          await supabase.from('messages').delete().eq('group_id', group.id);
-          await supabase.from('discussions').delete().eq('group_id', group.id);
-        }
-        // Delete the groups themselves
-        await supabase.from('groups').delete().eq('creator_id', userId);
-      }
-
-      // Delete projects created by the user and cascade to related tables
-      const { data: userProjects } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('user_id', userId);
-
-      if (userProjects) {
-        for (const project of userProjects) {
-          await supabase.from('project_join_requests').delete().eq('project_id', project.id);
-          await supabase.from('comments').delete().eq('project_id', project.id);
-        }
-        await supabase.from('projects').delete().eq('user_id', userId);
-      }
-
-      // Delete opportunities created by the user and cascade to related tables
-      const { data: userOpportunities } = await supabase
-        .from('opportunities')
-        .select('id')
-        .eq('user_id', userId);
-
-      if (userOpportunities) {
-        for (const opportunity of userOpportunities) {
-          await supabase.from('opportunity_applications').delete().eq('opportunity_id', opportunity.id);
-          await supabase.from('comments').delete().eq('opportunity_id', opportunity.id);
-        }
-        await supabase.from('opportunities').delete().eq('user_id', userId);
-      }
-
-      // Finally delete the user's profile
       const { error } = await supabase
         .from("profiles")
         .delete()
@@ -235,7 +153,7 @@ export const UserManagementSection = () => {
           action_type: "delete_user",
           target_table: "profiles",
           target_id: userId,
-          details: { action: "deleted_user_and_related_data" }
+          details: { action: "deleted_user" }
         });
 
       if (logError) {
@@ -246,7 +164,7 @@ export const UserManagementSection = () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({
         title: "Success",
-        description: "User and all related data deleted successfully",
+        description: "User deleted successfully",
       });
     },
     onError: (error: any) => {
