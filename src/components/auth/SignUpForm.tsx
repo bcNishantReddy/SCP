@@ -34,11 +34,13 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
     name: "",
     email: "",
     password: "",
-    role: "",
+    role: "student", // Set default role
   });
   const [error, setError] = useState<string | null>(null);
 
   const validateForm = () => {
+    console.log("Validating form data:", { ...formData, password: "REDACTED" });
+    
     if (!formData.name.trim()) {
       setError("Name is required");
       return false;
@@ -63,8 +65,9 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
       setError("Password must contain at least one number");
       return false;
     }
-    if (!formData.role) {
-      setError("Please select a role");
+    if (!roles.some(r => r.value === formData.role)) {
+      console.error("Invalid role selected:", formData.role);
+      setError("Please select a valid role");
       return false;
     }
     return true;
@@ -73,16 +76,35 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    console.log("Starting form submission with data:", { 
+      ...formData, 
+      password: "REDACTED",
+      role: formData.role || "student" 
+    });
 
     if (!validateForm()) {
+      console.log("Form validation failed");
       return;
     }
 
     try {
-      await onSubmit(formData);
+      const cleanedData = {
+        ...formData,
+        email: formData.email.trim(),
+        name: formData.name.trim(),
+        role: formData.role || "student"
+      };
+      console.log("Submitting cleaned form data:", { 
+        ...cleanedData, 
+        password: "REDACTED" 
+      });
+      
+      await onSubmit(cleanedData);
     } catch (error: any) {
       console.error("Signup error:", error);
-      setError(error.message || "An error occurred during sign up");
+      const errorMessage = error.message || "An error occurred during sign up";
+      console.error("Setting error message:", errorMessage);
+      setError(errorMessage);
     }
   };
 
