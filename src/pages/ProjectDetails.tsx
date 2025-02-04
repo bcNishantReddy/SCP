@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { UserPlus, Eye } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -107,15 +107,38 @@ const ProjectDetails = () => {
     mutationFn: async () => {
       if (!id || !currentUserId) throw new Error('Project ID and user ID are required');
       
-      const { error } = await supabase
+      // First check if a request already exists
+      const { data: existingRequest } = await supabase
         .from('project_join_requests')
-        .insert({
-          project_id: id,
-          user_id: currentUserId,
-          status: 'pending'
-        });
+        .select('id, status')
+        .eq('project_id', id)
+        .eq('user_id', currentUserId)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingRequest) {
+        // If request exists and was rejected, update it
+        if (existingRequest.status === 'rejected') {
+          const { error } = await supabase
+            .from('project_join_requests')
+            .update({ status: 'pending' })
+            .eq('id', existingRequest.id);
+
+          if (error) throw error;
+        } else {
+          throw new Error('A request already exists');
+        }
+      } else {
+        // If no request exists, create a new one
+        const { error } = await supabase
+          .from('project_join_requests')
+          .insert({
+            project_id: id,
+            user_id: currentUserId,
+            status: 'pending'
+          });
+
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectJoinRequests', id] });
@@ -124,12 +147,15 @@ const ProjectDetails = () => {
         description: "Join request sent successfully",
       });
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to send join request",
-        variant: "destructive",
-      });
+    onError: (error: Error) => {
+      // Only show error toast if it's not "A request already exists"
+      if (error.message !== 'A request already exists') {
+        toast({
+          title: "Error",
+          description: "Failed to send join request",
+          variant: "destructive",
+        });
+      }
     },
   });
 
