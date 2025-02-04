@@ -11,8 +11,11 @@ import {
 } from "@/components/ui/select";
 import { Lock, Mail, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { Database } from "@/integrations/supabase/types";
 
-const roles = [
+type UserRole = Database["public"]["Enums"]["user_role"];
+
+const roles: { value: UserRole; label: string }[] = [
   { value: "student", label: "Student" },
   { value: "faculty", label: "Faculty" },
   { value: "investor", label: "Investor" },
@@ -24,7 +27,7 @@ interface SignUpFormProps {
     name: string;
     email: string;
     password: string;
-    role: string;
+    role: UserRole;
   }) => Promise<void>;
   isLoading: boolean;
 }
@@ -34,12 +37,15 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
     name: "",
     email: "",
     password: "",
-    role: "student", // Set default role
+    role: "student" as UserRole,
   });
   const [error, setError] = useState<string | null>(null);
 
   const validateForm = () => {
-    console.log("Validating form data:", { ...formData, password: "REDACTED" });
+    console.log("Validating form data:", { 
+      ...formData, 
+      password: "REDACTED" 
+    });
     
     if (!formData.name.trim()) {
       setError("Name is required");
@@ -78,8 +84,7 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
     setError(null);
     console.log("Starting form submission with data:", { 
       ...formData, 
-      password: "REDACTED",
-      role: formData.role || "student" 
+      password: "REDACTED"
     });
 
     if (!validateForm()) {
@@ -173,7 +178,7 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
         <Label htmlFor="role">Role</Label>
         <Select
           value={formData.role}
-          onValueChange={(value) => setFormData({ ...formData, role: value })}
+          onValueChange={(value: UserRole) => setFormData({ ...formData, role: value })}
           disabled={isLoading}
           required
         >

@@ -19,12 +19,12 @@ export default function SignUp() {
     name: string;
     email: string;
     password: string;
-    role: string;
+    role: UserRole;
   }) => {
     setIsLoading(true);
     console.log("Starting signup process for:", { 
       email: formData.email.trim(),
-      role: formData.role || 'student'
+      role: formData.role
     });
 
     try {
@@ -34,9 +34,6 @@ export default function SignUp() {
         throw new Error(errors[0]);
       }
 
-      // Ensure role is valid
-      const role = formData.role ? formData.role as UserRole : 'student';
-
       // Attempt signup with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
@@ -44,7 +41,7 @@ export default function SignUp() {
         options: {
           data: {
             name: formData.name.trim(),
-            role: role,
+            role: formData.role,
           },
         },
       });
