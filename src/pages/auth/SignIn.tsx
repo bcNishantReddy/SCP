@@ -23,6 +23,23 @@ export default function SignIn() {
     try {
       console.log("Starting sign in process for:", email.trim());
 
+      // First check if the user exists in auth.users
+      const { data: userExists, error: userCheckError } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('email', email.trim())
+        .maybeSingle();
+
+      if (userCheckError) {
+        console.error("Error checking user existence:", userCheckError);
+        throw new Error("Failed to verify user account");
+      }
+
+      if (!userExists) {
+        console.error("No user found with email:", email.trim());
+        throw new Error("Invalid email or password");
+      }
+
       // Attempt sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -52,12 +69,14 @@ export default function SignIn() {
       console.error("Sign in process error:", error);
       let errorMessage = "An error occurred during sign in.";
       
-      if (error.message.includes("Invalid login credentials")) {
+      if (error.message?.includes("Invalid login credentials")) {
         errorMessage = "Invalid email or password.";
-      } else if (error.message.includes("Email not confirmed")) {
+      } else if (error.message?.includes("Email not confirmed")) {
         errorMessage = "Please verify your email address before signing in.";
-      } else if (error.message.includes("Database error")) {
+      } else if (error.message?.includes("Database error")) {
         errorMessage = "There was an issue connecting to the database. Please try again later.";
+      } else if (error.message?.includes("Failed to verify")) {
+        errorMessage = "Unable to verify account. Please try again later.";
       }
       
       toast({
