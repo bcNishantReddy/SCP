@@ -37,7 +37,7 @@ export default function SignIn() {
 
       if (!userExists) {
         console.error("No user found with email:", email.trim());
-        throw new Error("Invalid email or password");
+        throw new Error("No account found with this email. Please sign up first.");
       }
 
       // Attempt sign in
@@ -58,7 +58,7 @@ export default function SignIn() {
       console.log("Sign in successful:", data.user);
       
       toast({
-        title: "Success!",
+        title: "Welcome back!",
         description: "You have successfully signed in.",
       });
 
@@ -70,17 +70,19 @@ export default function SignIn() {
       let errorMessage = "An error occurred during sign in.";
       
       if (error.message?.includes("Invalid login credentials")) {
-        errorMessage = "Invalid email or password.";
+        errorMessage = "Incorrect email or password. Please try again.";
       } else if (error.message?.includes("Email not confirmed")) {
         errorMessage = "Please verify your email address before signing in.";
+      } else if (error.message?.includes("No account found")) {
+        errorMessage = error.message;
       } else if (error.message?.includes("Database error")) {
-        errorMessage = "There was an issue connecting to the database. Please try again later.";
+        errorMessage = "We're experiencing technical difficulties. Please try again later.";
       } else if (error.message?.includes("Failed to verify")) {
         errorMessage = "Unable to verify account. Please try again later.";
       }
       
       toast({
-        title: "Error",
+        title: "Sign in failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -93,7 +95,7 @@ export default function SignIn() {
     <AuthLayout>
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Welcome to Boss Y</h1>
           <p className="text-muted-foreground">
             Enter your credentials to access your account
           </p>
@@ -111,6 +113,7 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -125,6 +128,8 @@ export default function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
+                minLength={6}
               />
             </div>
           </div>
@@ -136,11 +141,12 @@ export default function SignIn() {
             {isLoading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <Button
             variant="link"
             className="text-sm text-muted-foreground hover:text-foreground"
             onClick={() => navigate("/auth/signup")}
+            disabled={isLoading}
           >
             Don't have an account? Sign up
           </Button>

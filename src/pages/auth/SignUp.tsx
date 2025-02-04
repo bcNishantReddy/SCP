@@ -80,8 +80,8 @@ export default function SignUp() {
 
       // Show success message
       toast({
-        title: "Registration Successful!",
-        description: "Please check your email to verify your account.",
+        title: "Welcome to Boss Y!",
+        description: "Your account has been created successfully. Please check your email to verify your account.",
       });
       
       // Redirect to signin page
@@ -96,7 +96,7 @@ export default function SignUp() {
           error.message?.includes("already exists")) {
         errorMessage = "An account with this email already exists.";
       } else if (error.message?.includes("Password")) {
-        errorMessage = error.message;
+        errorMessage = "Password must be at least 6 characters long.";
       } else if (error.message?.includes("valid email")) {
         errorMessage = "Please enter a valid email address.";
       } else if (error.message?.includes("role")) {
@@ -110,7 +110,7 @@ export default function SignUp() {
       }
       
       toast({
-        title: "Error",
+        title: "Sign up failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -123,9 +123,9 @@ export default function SignUp() {
     <AuthLayout>
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Create an account</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Join Boss Y</h1>
           <p className="text-muted-foreground">
-            Enter your details to get started
+            Create your account to get started
           </p>
         </div>
         <SignUpForm onSubmit={handleSignUp} isLoading={isLoading} />
@@ -134,6 +134,7 @@ export default function SignUp() {
             variant="link"
             className="text-sm text-muted-foreground hover:text-foreground"
             onClick={() => navigate("/auth/signin")}
+            disabled={isLoading}
           >
             Already have an account? Sign in
           </Button>
