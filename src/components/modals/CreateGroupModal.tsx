@@ -125,7 +125,7 @@ export function CreateGroupModal() {
         </div>
         <DialogFooter>
           <Button variant="outline" disabled={isLoading}>Cancel</Button>
-          <Button className="bg-sage-600 hover:bg-sage-700" onClick={handleSubmit} disabled={isLoading}>
+          <Button onClick={handleSubmit} disabled={isLoading} className="bg-sage-600 hover:bg-sage-700 text-slate-50">
             {isLoading ? "Creating..." : "Create Club"}
           </Button>
         </DialogFooter>
