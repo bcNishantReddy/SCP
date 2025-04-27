@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
@@ -75,7 +76,7 @@ export default function SignIn() {
     <AuthLayout>
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-sage-600 to-sage-700 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">
             Welcome Back
           </h1>
           <p className="text-muted-foreground">
@@ -86,12 +87,12 @@ export default function SignIn() {
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-5 w-5 text-sage-500" />
+              <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="pl-10 bg-white/50 border-sage-200 focus:border-sage-400 focus:ring-sage-400"
+                className="pl-10 bg-background border-input focus:border-primary focus:ring-primary"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -102,11 +103,11 @@ export default function SignIn() {
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-sage-500" />
+              <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
               <Input
                 id="password"
                 type="password"
-                className="pl-10 bg-white/50 border-sage-200 focus:border-sage-400 focus:ring-sage-400"
+                className="pl-10 bg-background border-input focus:border-primary focus:ring-primary"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -117,7 +118,7 @@ export default function SignIn() {
           </div>
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 text-white shadow-lg"
+            className="w-full bg-primary hover:bg-primary/90 text-white shadow"
             disabled={isLoading}
           >
             {isLoading ? "Signing in..." : "Sign in"}
@@ -126,7 +127,7 @@ export default function SignIn() {
         <div className="text-center">
           <Button
             variant="link"
-            className="text-sm text-sage-600 hover:text-sage-700"
+            className="text-sm text-primary hover:text-primary/80"
             onClick={() => navigate("/auth/signup")}
             disabled={isLoading}
           >
