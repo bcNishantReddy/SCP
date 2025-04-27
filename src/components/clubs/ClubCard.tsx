@@ -95,7 +95,7 @@ export function ClubCard({
             <span>{club._count?.discussions || 0} discussions</span>
           </div>
         </div>
-        {isCreator ? <Button className="w-full bg-sage-600 hover:bg-sage-700" onClick={() => navigate(`/clubs/${club.id}`)}>
+        {isCreator ? <Button onClick={() => navigate(`/clubs/${club.id}`)} className="w-full bg-sage-600 hover:bg-sage-700 text-slate-50">
             Manage Club
           </Button> : isMember ? <Button onClick={() => navigate(`/clubs/${club.id}`)} className="w-full bg-sage-600 hover:bg-sage-700 text-slate-50">
             View Group
