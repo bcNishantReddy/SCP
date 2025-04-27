@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
@@ -99,16 +98,16 @@ export default function SignUp() {
     <AuthLayout>
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Create Account</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Create Account</h1>
           <p className="text-muted-foreground">
-            Join Campus Connect to get started
+            Join Boss Y to get started
           </p>
         </div>
         <SignUpForm onSubmit={handleSignUp} isLoading={isLoading} />
         <div className="text-center">
           <Button
             variant="link"
-            className="text-sm text-primary hover:text-primary/80"
+            className="text-sm text-muted-foreground hover:text-foreground"
             onClick={() => navigate("/auth/signin")}
             disabled={isLoading}
           >

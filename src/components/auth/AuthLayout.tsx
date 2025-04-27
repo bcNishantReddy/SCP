@@ -10,22 +10,14 @@ interface AuthLayoutProps {
 export function AuthLayout({ children, className }: AuthLayoutProps) {
   return (
     <TooltipProvider>
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary/20 relative overflow-hidden">
-        {/* Abstract background patterns */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-accent rounded-full filter blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary rounded-full filter blur-3xl"></div>
-        </div>
-        
-        {/* Logo background pattern */}
-        <div className="absolute inset-0 bg-[url('/logo.svg')] bg-center opacity-3 bg-repeat-space" />
-        
-        {/* Content container */}
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-sage-50 via-sage-100 to-sage-200 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/logo.svg')] bg-center opacity-5 bg-repeat-space rotate-12 scale-150" />
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent backdrop-blur-[2px]" />
         <div
           className={cn(
-            "relative w-full max-w-md rounded-xl p-8 shadow-lg",
-            "bg-background/90 backdrop-blur-sm border border-muted",
-            "transition-all duration-300 hover:shadow-xl",
+            "relative w-full max-w-md rounded-xl p-8 shadow-2xl",
+            "bg-white/80 backdrop-blur-xl border border-white/20",
+            "animate-fade-up hover-effect",
             className
           )}
         >
