@@ -19,50 +19,28 @@ export default {
     },
     extend: {
       colors: {
+        primary: "#1D3557", // Deep Blue
+        secondary: "#F4A261", // Vibrant Orange
+        accent: "#E9C46A", // Academic Gold
+        success: "#2A9D8F", // Forest Green
+        background: "#FAF9F6", // Soft Beige
+        
+        // Keep existing Shadcn color system but override with our custom colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         sage: {
-          50: "#f2f9f2",
-          100: "#e8f5e9",
-          200: "#c8e6c9",
-          300: "#a5d6a7",
-          400: "#81c784",
-          500: "#66bb6a",
-          600: "#4caf50",
-          700: "#43a047",
-          800: "#388e3c",
-          900: "#2e7d32",
-        },
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          50: "#FAF9F6",
+          100: "#1D3557",
+          200: "#1D3557",
+          300: "#2A9D8F",
+          400: "#2A9D8F",
+          500: "#1D3557",
+          600: "#1D3557",
+          700: "#1D3557",
+          800: "#1D3557",
+          900: "#1D3557",
         },
       },
       borderRadius: {

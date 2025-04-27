@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { InterestsSection } from "@/components/profile/InterestsSection";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -35,7 +36,6 @@ const Profile = () => {
     getCurrentUser();
   }, []);
 
-  // Fetch profile data
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', id || currentUserId],
     queryFn: async () => {
@@ -52,7 +52,6 @@ const Profile = () => {
     enabled: !!currentUserId || !!id
   });
 
-  // Fetch user's portfolios
   const { data: portfolios, isLoading: portfoliosLoading } = useQuery({
     queryKey: ['userPortfolios', id || currentUserId],
     queryFn: async () => {
@@ -75,7 +74,6 @@ const Profile = () => {
     enabled: !!currentUserId || !!id
   });
 
-  // Fetch user's projects
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ['userProjects', id || currentUserId],
     queryFn: async () => {
@@ -92,7 +90,6 @@ const Profile = () => {
     enabled: !!currentUserId || !!id
   });
 
-  // Fetch education
   const { data: education = [], isLoading: educationLoading } = useQuery({
     queryKey: ['education', id || currentUserId],
     queryFn: async () => {
@@ -109,7 +106,6 @@ const Profile = () => {
     enabled: !!currentUserId || !!id
   });
 
-  // Fetch experiences
   const { data: experiences = [], isLoading: experiencesLoading } = useQuery({
     queryKey: ['experiences', id || currentUserId],
     queryFn: async () => {
@@ -181,16 +177,14 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-sage-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-16">
-        {/* Cover Image */}
         <div 
           className="h-32 md:h-64 bg-sage-200 transition-all duration-300 bg-cover bg-center"
           style={profile?.banner_url ? { backgroundImage: `url(${profile.banner_url})` } : {}}
         />
 
-        {/* Back Button (when viewing other's profile) */}
         {!isOwnProfile && (
           <div className="container mx-auto px-4 py-4">
             <Button
@@ -206,7 +200,6 @@ const Profile = () => {
 
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            {/* Profile Header */}
             <div className="relative -mt-16 mb-8">
               <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
@@ -245,15 +238,13 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* About */}
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4">About</h2>
-              <p className="text-sage-600">
+              <h2 className="text-lg font-semibold text-primary mb-4">About</h2>
+              <p className="text-foreground">
                 {profile?.bio || "No bio added yet."}
               </p>
             </div>
 
-            {/* Education Section */}
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Education</h2>
@@ -305,7 +296,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Experience Section */}
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Experience</h2>
@@ -361,7 +351,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Portfolios Section */}
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
               <h2 className="text-lg font-semibold mb-4">Portfolios</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -382,7 +371,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Projects Section */}
             <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
               <h2 className="text-lg font-semibold mb-4">Projects</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -402,6 +390,8 @@ const Profile = () => {
                 )}
               </div>
             </div>
+
+            {profile && <InterestsSection userId={profile.id} />}
           </div>
         </div>
       </main>
