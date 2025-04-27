@@ -79,7 +79,7 @@ const Events = () => {
                       </div>
                     </div>
                     <Link to={`/events/${event.id}`}>
-                      <Button className="w-full bg-sage-600 hover:bg-sage-700">
+                      <Button className="w-full bg-sage-600 hover:bg-sage-700 text-slate-50">
                         View Details
                       </Button>
                     </Link>
