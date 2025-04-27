@@ -82,7 +82,7 @@ const Portfolios = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-sage-800">Portfolios</h1>
-            <div className="flex justify-end space-x-4">
+            <div className="flex flex-wrap justify-end space-x-4">
               <a
                 href="https://resume-enhancer-vik.streamlit.app/"
                 target="_blank"
