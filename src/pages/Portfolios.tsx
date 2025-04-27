@@ -87,7 +87,7 @@ const Portfolios = () => {
                 href="https://resume-enhancer-vik.streamlit.app/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-sage-800 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                className="bg-sage-800 text-white px-4 py-2 rounded-lg transition"
               >
                 Enhance your resume
               </a>
