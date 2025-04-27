@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,7 +117,7 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="bg-red-50/50 backdrop-blur-sm">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -124,11 +125,11 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
       <div className="space-y-2">
         <Label htmlFor="name">Full Name</Label>
         <div className="relative">
-          <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+          <User className="absolute left-3 top-3 h-5 w-5 text-sage-500" />
           <Input
             id="name"
             placeholder="John Doe"
-            className="pl-10"
+            className="pl-10 bg-white/50 border-sage-200 focus:border-sage-400 focus:ring-sage-400"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             disabled={isLoading}
@@ -140,12 +141,12 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+          <Mail className="absolute left-3 top-3 h-5 w-5 text-sage-500" />
           <Input
             id="email"
             type="email"
             placeholder="name@example.com"
-            className="pl-10"
+            className="pl-10 bg-white/50 border-sage-200 focus:border-sage-400 focus:ring-sage-400"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             disabled={isLoading}
@@ -157,11 +158,11 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
         <div className="relative">
-          <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+          <Lock className="absolute left-3 top-3 h-5 w-5 text-sage-500" />
           <Input
             id="password"
             type="password"
-            className="pl-10"
+            className="pl-10 bg-white/50 border-sage-200 focus:border-sage-400 focus:ring-sage-400"
             placeholder="Min. 6 characters"
             value={formData.password}
             onChange={(e) =>
@@ -178,11 +179,13 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
         <Label htmlFor="role">Role</Label>
         <Select
           value={formData.role}
-          onValueChange={(value: UserRole) => setFormData({ ...formData, role: value })}
+          onValueChange={(value: UserRole) =>
+            setFormData({ ...formData, role: value })
+          }
           disabled={isLoading}
           required
         >
-          <SelectTrigger>
+          <SelectTrigger className="bg-white/50 border-sage-200 focus:border-sage-400 focus:ring-sage-400">
             <SelectValue placeholder="Select your role" />
           </SelectTrigger>
           <SelectContent>
@@ -197,7 +200,7 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
 
       <Button
         type="submit"
-        className="w-full bg-sage-600 hover:bg-sage-700"
+        className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 text-white shadow-lg"
         disabled={isLoading}
       >
         {isLoading ? "Creating account..." : "Create account"}

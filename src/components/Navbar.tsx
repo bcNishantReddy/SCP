@@ -69,66 +69,84 @@ const Navbar = () => {
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-sage-200">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-8">
-            <Link to="/feed" className="flex items-center space-x-2">
-              <img src="/logo.svg" alt="Campus Connect Logo" className="w-8 h-8" />
-              <span className="text-xl font-bold text-sage-700">Campus Connect</span>
-            </Link>
-            <div className="hidden md:flex space-x-4">
-              <NavLink to="/feed" icon={<Home size={18} />} label="Feed" />
-              <NavLink to="/projects" icon={<Briefcase size={18} />} label="Projects" />
-              <NavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
-              <NavLink to="/people" icon={<Users size={18} />} label="People" />
-              <NavLink to="/events" icon={<Calendar size={18} />} label="Events" />
-              <NavLink to="/clubs" icon={<Users size={18} />} label="Clubs" />
-              <NavLink to="/portfolios" icon={<FileText size={18} />} label="Portfolios" />
-              <NavLink to="/tutorials" icon={<BookOpen size={18} />} label="Tutorials" />
-              {isAdmin && (
-                <NavLink to="/admin" icon={<Settings size={18} />} label="Admin" />
-              )}
+    <nav className="fixed top-0 left-0 right-0 z-50">
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-sage-100/80 to-sage-200/80 backdrop-blur-md" />
+        <div className="container mx-auto px-4 relative">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-8">
+              <Link to="/feed" className="flex items-center space-x-2 group">
+                <img src="/logo.svg" alt="Campus Connect Logo" className="w-8 h-8 transition-transform group-hover:scale-110" />
+                <span className="text-xl font-bold bg-gradient-to-r from-sage-600 to-sage-700 bg-clip-text text-transparent">
+                  Campus Connect
+                </span>
+              </Link>
+              <div className="hidden md:flex space-x-1">
+                <NavLink to="/feed" icon={<Home size={18} />} label="Feed" />
+                <NavLink to="/projects" icon={<Briefcase size={18} />} label="Projects" />
+                <NavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
+                <NavLink to="/people" icon={<Users size={18} />} label="People" />
+                <NavLink to="/events" icon={<Calendar size={18} />} label="Events" />
+                <NavLink to="/clubs" icon={<Users size={18} />} label="Clubs" />
+                <NavLink to="/portfolios" icon={<FileText size={18} />} label="Portfolios" />
+                <NavLink to="/tutorials" icon={<BookOpen size={18} />} label="Tutorials" />
+                {isAdmin && (
+                  <NavLink to="/admin" icon={<Settings size={18} />} label="Admin" />
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-sage-500 rounded-full" />
-            </Button>
-            <Link to="/profile">
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative hover:bg-sage-200/50"
+              >
+                <Bell className="h-5 w-5 text-sage-700" />
+                <span className="absolute top-0 right-0 h-2 w-2 bg-sage-500 rounded-full ring-2 ring-white" />
               </Button>
-            </Link>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="h-5 w-5" />
-            </Button>
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
+              <Link to="/profile">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="hover:bg-sage-200/50"
+                >
+                  <User className="h-5 w-5 text-sage-700" />
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col space-y-4 mt-6">
-                  <MobileNavLink to="/feed" icon={<Home size={18} />} label="Feed" />
-                  <MobileNavLink to="/projects" icon={<Briefcase size={18} />} label="Projects" />
-                  <MobileNavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
-                  <MobileNavLink to="/people" icon={<Users size={18} />} label="People" />
-                  <MobileNavLink to="/events" icon={<Calendar size={18} />} label="Events" />
-                  <MobileNavLink to="/clubs" icon={<Users size={18} />} label="Clubs" />
-                  <MobileNavLink to="/portfolios" icon={<FileText size={18} />} label="Portfolios" />
-                  <MobileNavLink to="/tutorials" icon={<BookOpen size={18} />} label="Tutorials" />
-                  {isAdmin && (
-                    <MobileNavLink to="/admin" icon={<Settings size={18} />} label="Admin" />
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
+              </Link>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleLogout}
+                className="hover:bg-sage-200/50"
+              >
+                <LogOut className="h-5 w-5 text-sage-700" />
+              </Button>
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild className="md:hidden">
+                  <Button variant="ghost" size="icon" className="hover:bg-sage-200/50">
+                    <Menu className="h-5 w-5 text-sage-700" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-white/95 backdrop-blur-xl">
+                  <SheetHeader>
+                    <SheetTitle className="text-sage-700">Menu</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col space-y-4 mt-6">
+                    <MobileNavLink to="/feed" icon={<Home size={18} />} label="Feed" />
+                    <MobileNavLink to="/projects" icon={<Briefcase size={18} />} label="Projects" />
+                    <MobileNavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
+                    <MobileNavLink to="/people" icon={<Users size={18} />} label="People" />
+                    <MobileNavLink to="/events" icon={<Calendar size={18} />} label="Events" />
+                    <MobileNavLink to="/clubs" icon={<Users size={18} />} label="Clubs" />
+                    <MobileNavLink to="/portfolios" icon={<FileText size={18} />} label="Portfolios" />
+                    <MobileNavLink to="/tutorials" icon={<BookOpen size={18} />} label="Tutorials" />
+                    {isAdmin && (
+                      <MobileNavLink to="/admin" icon={<Settings size={18} />} label="Admin" />
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </div>
