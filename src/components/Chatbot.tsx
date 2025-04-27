@@ -16,7 +16,7 @@ const Chatbot = () => {
   ]);
   const [input, setInput] = useState("");
 
-  const GEMINI_API_KEY = "AIzaSyCEEDmkrr2GZTm5ckiwU29_hkvp-kN0QI8";
+  const GEMINI_API_KEY = "AIzaSyDbUrcDT2IPU9KD0gEo-X3MzZ7kYMkrFQo";
 
   const systemPrompt = `You are a professional and helpful chatbot integrated into a web application. Your role is to guide users to explore various pages of the application by providing direct links for navigation. Use the "window.location.origin" object to dynamically generate URLs. Here are the available routes and their descriptions:
 

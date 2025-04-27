@@ -82,7 +82,17 @@ const Portfolios = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-sage-800">Portfolios</h1>
-            <UploadPortfolioModal onSuccess={fetchPortfolios} />
+            <div className="flex justify-end space-x-4">
+              <a
+                href="https://resume-enhancer-vik.streamlit.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-sage-800 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Enhance your resume
+              </a>
+              <UploadPortfolioModal onSuccess={fetchPortfolios} />
+            </div>
           </div>
 
           <div className="relative mb-6">
