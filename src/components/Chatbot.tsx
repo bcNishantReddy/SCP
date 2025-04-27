@@ -136,7 +136,7 @@ const Chatbot = () => {
               </div>
             ))}
           </div>
-          <div className="p-4 border-t bg-gray-100 flex items-center" style={{ position: "absolute", bottom: 50, width: "100%" }}>
+          <div className="p-4 border-t bg-gray-100 flex items-center" style={{ position: "absolute", bottom: 30, width: "100%" }}>
             <input
               type="text"
               className="flex-1 border rounded-lg px-4 py-2 mr-2"
