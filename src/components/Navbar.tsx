@@ -69,7 +69,7 @@ const Navbar = () => {
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50">
+    <nav className="fixed top-0 left-0 right-0 z-50 text-white md:text-sage-600">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-sage-100/80 to-sage-200/80 backdrop-blur-md" />
         <div className="container mx-auto px-4 relative">
@@ -77,11 +77,8 @@ const Navbar = () => {
             <div className="flex items-center space-x-8">
               <Link to="/feed" className="flex items-center space-x-2 group">
                 <img src="/logo.svg" alt="Campus Connect Logo" className="w-8 h-8 transition-transform group-hover:scale-110" />
-                <span className="text-xl font-bold bg-gradient-to-r from-sage-600 to-sage-700 bg-clip-text text-transparent">
-                  Campus Connect
-                </span>
               </Link>
-              <div className="hidden md:flex space-x-1">
+              <div className="hidden md:flex space-x-1 pl-10">
                 <NavLink to="/feed" icon={<Home size={18} />} label="Feed" />
                 <NavLink to="/projects" icon={<Briefcase size={18} />} label="Projects" />
                 <NavLink to="/opportunities" icon={<Award size={18} />} label="Opportunities" />
@@ -101,7 +98,7 @@ const Navbar = () => {
                 size="icon" 
                 className="relative hover:bg-sage-200/50"
               >
-                <Bell className="h-5 w-5 text-sage-700" />
+                <Bell className="h-5 w-5 text-white" />
                 <span className="absolute top-0 right-0 h-2 w-2 bg-sage-500 rounded-full ring-2 ring-white" />
               </Button>
               <Link to="/profile">
@@ -110,7 +107,7 @@ const Navbar = () => {
                   size="icon"
                   className="hover:bg-sage-200/50"
                 >
-                  <User className="h-5 w-5 text-sage-700" />
+                  <User className="h-5 w-5 text-white" />
                 </Button>
               </Link>
               <Button 
@@ -119,7 +116,7 @@ const Navbar = () => {
                 onClick={handleLogout}
                 className="hover:bg-sage-200/50"
               >
-                <LogOut className="h-5 w-5 text-sage-700" />
+                <LogOut className="h-5 w-5 text-white" />
               </Button>
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild className="md:hidden">
@@ -157,7 +154,7 @@ const Navbar = () => {
 const NavLink = ({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) => (
   <Link
     to={to}
-    className="flex items-center space-x-1 text-sage-600 hover:text-sage-800 transition-colors"
+    className="flex items-center space-x-1 text-white px-2 hover:text-sage-800 transition-colors"
   >
     {icon}
     <span>{label}</span>

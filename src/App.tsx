@@ -18,6 +18,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { OpportunityDetails } from "@/components/opportunities/OpportunityDetails";
 import AdminDashboard from "@/pages/AdminDashboard";
 import ClubDetails from "@/pages/ClubDetails";
+import Chatbot from "./components/Chatbot";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -177,6 +178,7 @@ const App = () => {
             }
           />
         </Routes>
+        <Chatbot />
       </Router>
     </QueryClientProvider>
   );
