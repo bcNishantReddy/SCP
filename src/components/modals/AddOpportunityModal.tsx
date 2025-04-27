@@ -138,7 +138,7 @@ export function AddOpportunityModal() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-sage-600 hover:bg-sage-700" disabled={loading}>
+            <Button type="submit" disabled={loading} className="bg-sage-600 hover:bg-sage-700 text-slate-50">
               {loading ? "Creating..." : "Post Opportunity"}
             </Button>
           </DialogFooter>
